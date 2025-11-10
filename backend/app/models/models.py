@@ -2,8 +2,9 @@
 # FICHIER : backend/app/models/models.py
 # ============================================
 
-from sqlalchemy import Boolean, Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy import Boolean, Column, Integer, String, DateTime, ForeignKey, TIMESTAMP
 from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
 from app.database import Base
 
 class User(Base):
@@ -26,3 +27,14 @@ class LoginAttempt(Base):
     attempts_count = Column(Integer, default=0)
     last_attempt = Column(DateTime(timezone=True))
     locked_until = Column(DateTime(timezone=True), nullable=True)
+
+
+class Pool(Base):
+    __tablename__ = "pools"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, nullable=False)
+    created_at = Column(TIMESTAMP, server_default=func.current_timestamp())
+
+    # Relations
+    teams = relationship("Team", back_populates="pool")

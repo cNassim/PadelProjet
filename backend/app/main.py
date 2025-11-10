@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.api import auth
+from app.api import auth, pools
 from app.database import engine
 from app.models import models
 
@@ -34,6 +34,7 @@ async def add_security_headers(request, call_next):
 
 # Routes
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
+app.include_router(pools.router, prefix="/api/pools", tags="Pools")
 
 @app.get("/")
 def read_root():
