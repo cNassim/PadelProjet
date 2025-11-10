@@ -5,8 +5,9 @@ class Team(BaseModel):
     id:int #à importer de l'implementation des filles.
 
     
-class Pool(BaseModel):
+class PoolCreate(BaseModel):
     id: int
     name: str
     teams_count: int
     teams: list[Team] = []
+
