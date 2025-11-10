@@ -49,6 +49,8 @@ class Player(Base):
         CheckConstraint("license_number GLOB 'L[0-9][0-9][0-9][0-9][0-9][0-9]'", name="chk_license_format"),
     )
 
+    teams_as_player1 = relationship("Team", back_populates="player1", foreign_keys="Team.player1_id")
+    teams_as_player2 = relationship("Team", back_populates="player2", foreign_keys="Team.player2_id")
     user = relationship("User", back_populates="player", passive_deletes=True)
 
 class Pool(Base):

@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.api import auth
+from app.api import auth,teams
 from app.database import engine
 from app.models import models
 
@@ -42,3 +42,5 @@ def read_root():
 @app.get("/health")
 def health_check():
     return {"status": "healthy"}
+'''
+app.include_router(teams.router)'''
