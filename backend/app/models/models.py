@@ -2,7 +2,7 @@
 # FICHIER : backend/app/models/models.py
 # ============================================
 
-from sqlalchemy import Boolean, Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy import Boolean, Column, Integer, String, DateTime, ForeignKey, TIMESTAMP
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.database import Base
@@ -32,7 +32,9 @@ class LoginAttempt(Base):
 class Pool(Base):
     __tablename__ = "pools"
 
-    id = Column(Integer, primary_key=True, index=True),
-    name = Column(String, unique=True,index=True),
-    
-    teams = relationship('Team', back_populates="pool")
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, nullable=False)
+    created_at = Column(TIMESTAMP, server_default=func.current_timestamp())
+
+    # Relations
+    teams = relationship("Team", back_populates="pool")
