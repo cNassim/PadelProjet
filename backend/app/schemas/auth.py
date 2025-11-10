@@ -27,6 +27,32 @@ class TokenResponse(BaseModel):
     token_type: str
     user: UserResponse
 
+class SignUpRequest(BaseModel):
+    email: EmailStr
+    password: str = Field(..., min_length=12)
+    confirm_password: str
+    role: str = Field(default="JOUEUR", pattern="^(JOUEUR|ADMINISTRATEUR)$")
+    
+    @validator('password')
+    def validate_password(cls, v):
+        if len(v) < 12:
+            raise ValueError('Le mot de passe doit contenir au moins 12 caractères')
+        if not re.search(r'[A-Z]', v):
+            raise ValueError('Le mot de passe doit contenir au moins une majuscule')
+        if not re.search(r'[a-z]', v):
+            raise ValueError('Le mot de passe doit contenir au moins une minuscule')
+        if not re.search(r'\d', v):
+            raise ValueError('Le mot de passe doit contenir au moins un chiffre')
+        if not re.search(r'[!@#$%^&*(),.?":{}|<>]', v):
+            raise ValueError('Le mot de passe doit contenir au moins un caractère spécial')
+        return v
+    
+    @validator('confirm_password')
+    def passwords_match(cls, v, values):
+        if 'password' in values and v != values['password']:
+            raise ValueError('Les mots de passe ne correspondent pas')
+        return v
+
 class ChangePasswordRequest(BaseModel):
     current_password: str
     new_password: str = Field(..., min_length=12)
