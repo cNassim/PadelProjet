@@ -7,9 +7,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.models import User, LoginAttempt
-from app.schemas.auth import LoginRequest, TokenResponse, UserResponse, ChangePasswordRequest
+from app.schemas.auth import LoginRequest, TokenResponse, UserResponse, ChangePasswordRequest, SignUpRequest
 from app.core.security import verify_password, get_password_hash, create_access_token
 from app.api.deps import get_current_user
+
 
 router = APIRouter()
 
@@ -23,6 +24,8 @@ def check_and_update_attempts(db: Session, email: str, success: bool = False):
     if not attempt:
         attempt = LoginAttempt(email=email)
         db.add(attempt)
+
+    print(type(attempt.attempts_count))
     
     now = datetime.utcnow()
     
@@ -104,6 +107,79 @@ def login(credentials: LoginRequest, db: Session = Depends(get_db)):
         access_token=access_token,
         token_type="bearer",
         user=UserResponse.from_orm(user)
+    )
+
+@router.post("/sign-up", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
+def sign_up(request: SignUpRequest, db: Session = Depends(get_db)):
+    """
+    Crée un nouveau compte utilisateur.
+    
+    Cette route permet à un utilisateur de s'inscrire sur la plateforme.
+    
+    Args:
+        request (SignUpRequest): Les données d'inscription contenant :
+            - email (EmailStr): Adresse email de l'utilisateur
+            - password (str): Mot de passe (min 12 caractères avec majuscule, minuscule, chiffre, caractère spécial)
+            - confirm_password (str): Confirmation du mot de passe
+            - role (str): Rôle de l'utilisateur (JOUEUR par défaut ou ADMINISTRATEUR)
+        db (Session): Session de base de données (injection automatique)
+    
+    Returns:
+        TokenResponse: Objet contenant :
+            - access_token (str): Token JWT pour l'authentification
+            - token_type (str): Type de token (bearer)
+            - user (UserResponse): Informations de l'utilisateur créé
+    
+    Raises:
+        HTTPException 400: Si l'utilisateur existe existe déjà dans la base de données
+        HTTPException 422: Si les données de validation échouent (mot de passe faible, emails non correspondants, etc.)
+    
+    Example:
+        ```json
+        POST /api/v1/auth/sign-up
+        {
+            "email": "user@example.com",
+            "password": "SecureP@ss123",
+            "confirm_password": "SecureP@ss123",
+            "role": "JOUEUR"
+        }
+        ```
+    """
+    
+    # Vérifier si l'email existe déjà
+    existing_user = db.query(User).filter(User.email == request.email).first()
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Un compte avec cet email existe déjà"
+        )
+    
+    # Créer le nouvel utilisateur
+    new_user = User(
+        email=request.email,
+        password_hash=get_password_hash(request.password),
+        role=request.role,
+        is_active=True,
+        must_change_password=False
+    )
+    
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    
+    # Créer un token pour connexion automatique après inscription
+    access_token = create_access_token(
+        data={
+            "sub": str(new_user.id),
+            "email": new_user.email,
+            "role": new_user.role
+        }
+    )
+    
+    return TokenResponse(
+        access_token=access_token,
+        token_type="bearer",
+        user=UserResponse.from_orm(new_user)
     )
 
 @router.post("/change-password")
