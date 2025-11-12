@@ -3,6 +3,9 @@ node_modules/
 dist/
 .dev.db
 .vscode/
+.venv/
+.env
+.env.exemple
 
 .DS_Store
 node_modules
