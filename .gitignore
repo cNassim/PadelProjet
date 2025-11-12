@@ -3,10 +3,13 @@ node_modules/
 dist/
 .dev.db
 .vscode/
+venv/
+backend/venv/
+.venv/
+.env
+backend/.env
 
 .DS_Store
-node_modules
-/dist
 
 # Log files
 npm-debug.log*
@@ -16,7 +19,6 @@ pnpm-debug.log*
 
 # Editor directories and files
 .idea
-.vscode
 *.suo
 *.ntvs*
 *.njsproj
