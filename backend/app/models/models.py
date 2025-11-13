@@ -4,6 +4,7 @@
 
 from sqlalchemy import Boolean, Column, Integer, String, DateTime, ForeignKey, TIMESTAMP, CheckConstraint
 from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
 from app.database import Base
 from sqlalchemy.orm import relationship
 
