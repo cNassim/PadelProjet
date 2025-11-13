@@ -1,16 +1,16 @@
 from fastapi import APIRouter,Depends, HTTPException
 from app.database import *
-from app.schemas.pools import Pool as PoolSchema
 from sqlalchemy.orm import Session
 from app.api.deps import get_current_admin
-from app.schemas.pools import *
+from app.models.models import Pool as PoolSchema
+from app.schemas.pools import PoolCreate
 
 router = APIRouter(prefix="/pools")
 
 #Liste toutes les poules - GET /pools
 @router.get("/", response_model=dict)
 def list_pools(db: Session = Depends(get_db)):
-    pools = db.query(PoolSchema).all()
+    pools = db.query(pools).all()
 
     response ={
         "pools": [
@@ -26,8 +26,8 @@ def list_pools(db: Session = Depends(get_db)):
     return response
 
 #Créer une poule (Admin UNIQUEMENT) - POST /pools - 6 equipes - nom unique.
-#@router.post("/", response_model="Pool")
-'''def createPool(pool_data:PoolCreate, db: Session= Depends(get_db), _: dict = Depends(get_current_admin),):
+@router.post("/", response_model="Pool")
+def createPool(pool_data:PoolCreate, db: Session= Depends(get_db), _: dict = Depends(get_current_admin),):
     
     #Verifie si le nom existe déjà:
     existing = db.query(PoolSchema).filter(PoolSchema.name==pool_data.name).first()
@@ -39,7 +39,9 @@ def list_pools(db: Session = Depends(get_db)):
     db.add(newPool)
     db.commit()
 
-    #Créer les 6 équipes'''
+    #Créer les 6 équipes
+    
+
 
 
 # Modifier une poule (Admin UNIQUEMENT)- PUT /pools/{id} - cond: aucun match joué dans la poule.
