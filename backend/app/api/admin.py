@@ -205,3 +205,33 @@ def get_players_without_account(
         ],
         "total": len(players)
     }
+
+@router.get("/users")
+def get_all_users(
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin)
+):
+    """
+    Récupérer la liste de tous les utilisateurs
+    
+    **Authentification** : Admin uniquement
+    
+    Retourne une liste d'utilisateurs avec leurs informations
+    """
+    
+    # Récupérer tous les utilisateurs
+    users = db.query(User).all()
+    
+    return {
+        "users": [
+            {
+                "id": user.id,
+                "email": user.email,
+                "role": user.role,
+                "is_active": user.is_active,
+                "must_change_password": user.must_change_password
+            }
+            for user in users
+        ],
+        "total": len(users)
+    }
