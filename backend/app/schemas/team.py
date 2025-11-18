@@ -1,7 +1,7 @@
 # ============================================
 # backend/app/schemas/team.py
 # ============================================
-'''
+
 from pydantic import BaseModel
 from typing import Optional, List
 
@@ -40,4 +40,3 @@ class TeamCreate(BaseModel):
     player1_id: int
     player2_id: int
     pool_id: Optional[int]
-'''
