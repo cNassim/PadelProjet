@@ -132,3 +132,4 @@ class Match(Base):
     event = relationship("Event", back_populates="matches")
     team1 = relationship("Team", foreign_keys=[team1_id], back_populates="matches_as_team1")
     team2 = relationship("Team", foreign_keys=[team2_id], back_populates="matches_as_team2")
+>>>>>>>>> Temporary merge branch 2
