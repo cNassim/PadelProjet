@@ -113,6 +113,8 @@ def create_account(
     # Lier le joueur au compte utilisateur
     player.user_id = new_user.id
     db.commit()
+
+    print(f"New user info : {email} & {temporary_password}")
     
     return CreateAccountResponse(
         message="Compte créé avec succès",
