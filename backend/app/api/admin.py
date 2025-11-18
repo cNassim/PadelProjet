@@ -174,3 +174,34 @@ def reset_password(
         message="Mot de passe réinitialisé",
         temporary_password=temporary_password
     )
+
+@router.get("/players-without-account")
+def get_players_without_account(
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin)
+):
+    """
+    Récupérer la liste des joueurs qui n'ont pas encore de compte utilisateur
+    
+    **Authentification** : Admin uniquement
+    
+    Retourne une liste de joueurs avec leurs informations de base
+    """
+    
+    # Récupérer les joueurs sans compte (user_id est NULL)
+    players = db.query(Player).filter(Player.user_id == None).all()
+    
+    return {
+        "players": [
+            {
+                "id": player.id,
+                "first_name": player.first_name,
+                "last_name": player.last_name,
+                "company": player.company,
+                "license_number": player.license_number,
+                "full_name": f"{player.first_name} {player.last_name}"
+            }
+            for player in players
+        ],
+        "total": len(players)
+    }
