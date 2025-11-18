@@ -44,5 +44,5 @@ def read_root():
 @app.get("/health")
 def health_check():
     return {"status": "healthy"}
-'''
-app.include_router(teams.router)'''
+
+app.include_router(teams.router)
