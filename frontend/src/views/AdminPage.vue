@@ -77,9 +77,6 @@
                     {{ player.full_name }} · {{ player.company }} · {{ player.license_number }}
                   </option>
                 </select>
-                <p class="mt-1.5 text-xs text-gray-500">
-                  Seuls les joueurs sans compte apparaissent
-                </p>
               </div>
 
               <!-- Sélection du rôle -->
@@ -206,9 +203,6 @@
                     {{ !user.is_active ? ' · Inactif' : '' }}
                   </option>
                 </select>
-                <p class="mt-1.5 text-xs text-gray-500">
-                  Vous ne pouvez pas réinitialiser le mot de passe d'un autre admin
-                </p>
               </div>
 
               <!-- Bouton de soumission -->
