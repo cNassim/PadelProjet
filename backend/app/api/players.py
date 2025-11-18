@@ -28,9 +28,31 @@ def create_player(payload: PlayerCreate, db: Session = Depends(get_db)):
     validate_unique_fields(db, email=payload.email, licence=payload.licence_number)
 
 
-"""
-@router.delete("/{player_id}")
 
+
+@router.delete("/{player_id}")
+def delete_player(player_id: int, db: Session = Depends(get_db)):
+    player = db.query(Player).filter(Player.id == player_id).first()
+    if not player:
+        raise HTTPException(status_code=404, detail="Player not found")
+    
+    db.delete(player)
+    db.commit()
+    return {"message": f"Player avec cet id {player_id} n'existe pas"}
 
 @router.put("/{player_id}")
-"""
+
+def update_player(payload: PlayerUpdate, db: Session = Depends(get_db)):
+
+
+
+
+
+
+
+
+
+
+
+
+
