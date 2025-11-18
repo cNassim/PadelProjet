@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.models import User, Player
-from app.schemas.admin import CreateAccountRequest, CreateAccountResponse
+from app.schemas.admin import CreateAccountRequest, CreateAccountResponse, ResetPasswordResponse
 from app.core.security import get_password_hash
 from app.api.deps import get_current_admin
 
@@ -117,5 +117,60 @@ def create_account(
     return CreateAccountResponse(
         message="Compte créé avec succès",
         email=email,
+        temporary_password=temporary_password
+    )
+
+@router.post("/accounts/{user_id}/reset-password", response_model=ResetPasswordResponse)
+def reset_password(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin)
+):
+    """
+    Réinitialiser le mot de passe d'un utilisateur
+    
+    **Authentification** : Admin uniquement
+    
+    **Règles métier** :
+    - L'utilisateur doit exister
+    - Un nouveau mot de passe temporaire est généré
+    - L'utilisateur devra changer son mot de passe à la prochaine connexion
+    - Les tentatives de connexion échouées sont réinitialisées
+    """
+    
+    # Vérifier que l'utilisateur existe
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Utilisateur avec l'ID {user_id} introuvable"
+        )
+    
+    # Empêcher la réinitialisation du mot de passe d'un admin par un autre admin
+    # (mesure de sécurité supplémentaire)
+    if user.role == "ADMINISTRATEUR" and user.id != current_admin.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Vous ne pouvez pas réinitialiser le mot de passe d'un autre administrateur"
+        )
+    
+    # Générer un nouveau mot de passe temporaire
+    temporary_password = generate_temporary_password()
+    
+    # Mettre à jour le mot de passe
+    user.password_hash = get_password_hash(temporary_password)
+    user.must_change_password = True
+    
+    # Réinitialiser les tentatives de connexion échouées si elles existent
+    from app.models.models import LoginAttempt
+    login_attempt = db.query(LoginAttempt).filter(LoginAttempt.email == user.email).first()
+    if login_attempt:
+        login_attempt.attempts_count = 0
+        login_attempt.locked_until = None
+    
+    db.commit()
+    
+    return ResetPasswordResponse(
+        message="Mot de passe réinitialisé",
         temporary_password=temporary_password
     )
