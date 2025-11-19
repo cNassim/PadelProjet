@@ -1,4 +1,4 @@
-from fastapi import APIRouter,Depends, HTTPException
+'''from fastapi import APIRouter,Depends, HTTPException
 from app.database import *
 from sqlalchemy.orm import Session
 from app.api.deps import get_current_admin
@@ -46,4 +46,4 @@ def createPool(pool_data:PoolCreate, db: Session= Depends(get_db), _: dict = Dep
 
 # Modifier une poule (Admin UNIQUEMENT)- PUT /pools/{id} - cond: aucun match joué dans la poule.
 
-#Supprimer une poule (Admin UNIQUEMENT) - DELETE/pools/{id} - cond: aucun match joué dans la poule.
+#Supprimer une poule (Admin UNIQUEMENT) - DELETE/pools/{id} - cond: aucun match joué dans la poule.'''
