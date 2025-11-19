@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.api import auth,teams, pools
+from app.api import auth, teams, pools, admin
 from app.database import engine
 from app.models import models
 
@@ -34,7 +34,8 @@ async def add_security_headers(request, call_next):
 
 # Routes
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
-app.include_router(pools.router, prefix="/api/pools", tags="Pools")
+app.include_router(admin.router, prefix="/api/v1/admin", tags=["Administration"])
+# app.include_router(pools.router, prefix="/api/pools", tags="Pools")
 
 @app.get("/")
 def read_root():
@@ -43,5 +44,5 @@ def read_root():
 @app.get("/health")
 def health_check():
     return {"status": "healthy"}
-'''
-app.include_router(teams.router)'''
+
+app.include_router(teams.router)
