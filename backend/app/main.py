@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.api import auth,teams, pools
+from app.api import auth,teams, players
 from app.database import engine
 from app.models import models
 
@@ -45,3 +45,5 @@ def health_check():
     return {"status": "healthy"}
 
 app.include_router(teams.router)
+
+app.include_router(players.router)

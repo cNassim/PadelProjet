@@ -1,58 +1,38 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from app.schemas.player import PlayerCreate, PlayerDelete, PlayerUpdate, PlayerResponse
+from typing import List
+from fastapi import HTTPException, status
 from app.database import get_db
-from app.models.models import Player, User
-router = APIRouter(prefix="/players", tags=["Players"])
+from app.schemas.player import PlayerCreate, PlayerUpdate, PlayerResponse
+from app.services.player_service import create_player_service, update_player_service, delete_player_service
+from app.models.models import Player
 
+router = APIRouter(prefix="/admin/players", tags=["Players"])
 
-
+# POST
 @router.post("/", response_model=PlayerResponse)
-
-def validate_unique_fields(db: Session, email: str, licence: str, id: int=None):
-
-    query= db.query(Player).filter(User.email == email)
-    if id:
-        query = query.filter(User.id != id)
-    if query.first():
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email déjà utilisé")
-    
-    query = db.query(Player).filter(Player.license_number == licence)
-    if id:
-        query = query.filter(Player.id != id)
-    if query.first():
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Numéro de licence déjà utilisé")
-
 def create_player(payload: PlayerCreate, db: Session = Depends(get_db)):
+    return create_player_service(payload, db)
 
-    validate_unique_fields(db, email=payload.email, licence=payload.licence_number)
+# GET all
+@router.get("/", response_model=List[PlayerResponse])
+def get_all_players(db: Session = Depends(get_db)):
+    return db.query(Player).all()
 
-
-
-
-@router.delete("/{player_id}")
-def delete_player(player_id: int, db: Session = Depends(get_db)):
+# GET by id
+@router.get("/{player_id}", response_model=PlayerResponse)
+def get_player(player_id: int, db: Session = Depends(get_db)):
     player = db.query(Player).filter(Player.id == player_id).first()
     if not player:
-        raise HTTPException(status_code=404, detail="Player not found")
-    
-    db.delete(player)
-    db.commit()
-    return {"message": f"Player avec cet id {player_id} n'existe pas"}
+        raise HTTPException(status_code=404, detail="Player n'existe pas")
+    return player
 
-@router.put("/{player_id}")
+# PUT
+@router.put("/{player_id}", response_model=PlayerResponse)
+def update_player(player_id: int, payload: PlayerUpdate, db: Session = Depends(get_db)):
+    return update_player_service(player_id, payload, db)
 
-def update_player(payload: PlayerUpdate, db: Session = Depends(get_db)):
-
-
-
-
-
-
-
-
-
-
-
-
-
+# DELETE
+@router.delete("/{player_id}", status_code=204)
+def delete_player(player_id: int, db: Session = Depends(get_db)):
+    delete_player_service(player_id, db)

@@ -6,7 +6,7 @@ class PlayerCreate(BaseModel):
     first_name: str = Field(..., min_length = 2, max_length = 50)
     last_name: str =Field(...,min_length = 2, max_length = 50)
     company: str = Field(..., min_length=2, max_length = 100)
-    licence_number: str = Field(..., regex=r"^L\d{6}$")
+    license_number: str = Field(..., pattern=r"^L\d{6}$")
     email : EmailStr
 #	2-50 caractères, lettres et espaces uniquement
 #   2-50 caractères, lettres et espaces uniquement
@@ -46,7 +46,7 @@ class PlayerResponse(BaseModel):
     first_name: str
     last_name: str
     company: str
-    licence_number: str
+    license_number: str
     email: str
 
     class Config:
