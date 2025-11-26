@@ -36,3 +36,4 @@ def update_player(player_id: int, payload: PlayerUpdate, db: Session = Depends(g
 @router.delete("/{player_id}", status_code=204)
 def delete_player(player_id: int, db: Session = Depends(get_db)):
     delete_player_service(player_id, db)
+    return {"message": f"Le joueur avec l'id {player_id} a été supprimé."}

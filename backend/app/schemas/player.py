@@ -6,8 +6,8 @@ class PlayerCreate(BaseModel):
     first_name: str = Field(..., min_length = 2, max_length = 50)
     last_name: str =Field(...,min_length = 2, max_length = 50)
     company: str = Field(..., min_length=2, max_length = 100)
-    license_number: str = Field(..., pattern=r"^L\d{6}$")
-    email : EmailStr
+    license_number: str = Field(...)
+    email : str | None = None #facultatif
 #	2-50 caractères, lettres et espaces uniquement
 #   2-50 caractères, lettres et espaces uniquement
 #   	2-100 caractères
@@ -17,6 +17,11 @@ class PlayerCreate(BaseModel):
     def check_names(cls, v):
         if not re.match(r"^[A-Za-zÀ-ÖØ-öø-ÿ' -]+$", v):
             raise ValueError("Le nom et prenom doivent contenir uniquement des lettres et des espaces.")
+        return v
+    @validator("license_number")
+    def validate_license_number(cls, v):
+        if not re.match(r"^L\d{6}$", v):
+            raise ValueError("Le numéro de licence doit commencer par 'L' suivi de 6 chiffres (ex: L123456).")
         return v
 
 class PlayerUpdate(BaseModel):
@@ -47,7 +52,8 @@ class PlayerResponse(BaseModel):
     last_name: str
     company: str
     license_number: str
-    email: str
+    email: str| None = None
 
-    class Config:
-        orm_mode = True
+    model_config = {
+        "from_attributes": True  
+    }

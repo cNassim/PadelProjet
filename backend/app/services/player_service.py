@@ -2,6 +2,8 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from app.models.models import Player, User
 from app.schemas.player import PlayerCreate, PlayerUpdate, PlayerResponse
+from passlib.hash import bcrypt
+
 
 # Validation unicité email / licence
 def validate_unique_fields(db: Session, email: str, licence: str, player_id: int = None):
@@ -17,16 +19,34 @@ def validate_unique_fields(db: Session, email: str, licence: str, player_id: int
     if query.first():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Numéro de licence déjà utilisé")
 
-# Création d'un joueur
+# Création d'un joueur seulement
 def create_player_service(payload: PlayerCreate, db: Session) -> Player:
     validate_unique_fields(db, email=payload.email, licence=payload.license_number)
 
-
     #CREER USER AVANT PLAYER??
-    new_user = User(email=payload.email)
-    db.add(new_user)
+
+    new_player = Player(
+        first_name = payload.first_name,
+        last_name = payload.last_name,
+        license_number = payload.license_number,
+        company = payload.company
+    )
+    db.add(new_player)
     db.commit()
-    db.refresh(new_user)
+    db.refresh(new_player)
+    """
+    password_temp = "changer12"
+    password_hash = bcrypt.hash(password_temp)
+    new_user = User(
+        email=payload.email,
+        password_hash = password_hash,
+        role = "Joueur",
+        is_active=True,
+        must_change_password = True
+        )
+    db.add(new_user)
+    db.flush() 
+
     new_player = Player(
         first_name=payload.first_name,
         last_name=payload.last_name,
@@ -39,21 +59,9 @@ def create_player_service(payload: PlayerCreate, db: Session) -> Player:
     db.add(new_player)
     db.commit()
     db.refresh(new_player)
-    new_user = User(
-    email=payload.email,
-    player_id=new_player.id
-    )
-    db.add(new_user)
-    db.commit()
     db.refresh(new_user)
-    return PlayerResponse(
-        id=new_player.id,
-        first_name=new_player.first_name,
-        last_name=new_player.last_name,
-        company=new_player.company,
-        license_number=new_player.license_number,
-        email=new_user.email
-    )
+    """
+    return PlayerResponse.from_orm(new_player)
 # MAJ d'un joueur
 def update_player_service(player_id: int, payload: PlayerUpdate, db: Session) -> Player:
     player = db.query(Player).filter(Player.id == player_id).first()
@@ -82,3 +90,4 @@ def delete_player_service(player_id: int, db: Session):
 
     db.delete(player)
     db.commit()
+ 

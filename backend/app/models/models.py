@@ -4,6 +4,7 @@
 
 from sqlalchemy import Boolean, Column, Integer, String, DateTime, ForeignKey, TIMESTAMP, CheckConstraint
 from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
 from app.database import Base
 from sqlalchemy.orm import relationship
 
@@ -29,6 +30,7 @@ class LoginAttempt(Base):
     attempts_count = Column(Integer, default=0)
     last_attempt = Column(DateTime(timezone=True))
     locked_until = Column(DateTime(timezone=True), nullable=True)
+
 
 class Player(Base):
     __tablename__="players"
