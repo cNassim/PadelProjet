@@ -3,14 +3,14 @@ from sqlalchemy.orm import Session
 from typing import List
 from fastapi import HTTPException, status
 from app.database import get_db
-from app.schemas.player import PlayerCreate, PlayerUpdate, PlayerResponse
+from app.schemas.player import PlayerCreate, PlayerUpdate, PlayerResponse, PlayerCreateResponse
 from app.services.player_service import create_player_service, update_player_service, delete_player_service
 from app.models.models import Player
 
 router = APIRouter(prefix="/admin/players", tags=["Players"])
 
 # POST
-@router.post("/", response_model=PlayerResponse)
+@router.post("/", response_model=PlayerCreateResponse)
 def create_player(payload: PlayerCreate, db: Session = Depends(get_db)):
     return create_player_service(payload, db)
 

@@ -1,8 +1,9 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from app.models.models import Player, User
-from app.schemas.player import PlayerCreate, PlayerUpdate, PlayerResponse
+from app.schemas.player import PlayerCreate, PlayerUpdate, PlayerResponse, PlayerCreateResponse
 from passlib.hash import bcrypt
+from app.core.security import generate_temp_password
 
 
 # Validation unicité email / licence
@@ -26,7 +27,7 @@ def create_player_service(payload: PlayerCreate, db: Session) -> Player:
     #CREER USER AVANT PLAYER??
 
     
-    password_temp = "changer12"
+    password_temp = generate_temp_password()
     password_hash = bcrypt.hash(password_temp)
     new_user = User(
         email=payload.email,
@@ -52,13 +53,18 @@ def create_player_service(payload: PlayerCreate, db: Session) -> Player:
     db.refresh(new_player)
     db.refresh(new_user)
  
-    return PlayerResponse(
-        id=new_player.id,
-        first_name=new_player.first_name,
-        last_name=new_player.last_name,
-        company=new_player.company,
-        license_number=new_player.license_number,
-        email=new_user.email
+    return PlayerCreateResponse(
+        # a) Création du PlayerResponse (PlayerResponse.email vient de new_user.email)
+        player=PlayerResponse(
+            id=new_player.id,
+            first_name=new_player.first_name,
+            last_name=new_player.last_name,
+            company=new_player.company,
+            license_number=new_player.license_number,
+            email=new_user.email # On prend l'email de l'objet User
+        ),
+        # b) Ajout du mot de passe temporaire (en vrac)
+        temp_password=password_temp # Le mot de passe en clair est retourné ici
     )
 # MAJ d'un joueur
 def update_player_service(player_id: int, payload: PlayerUpdate, db: Session) -> Player:

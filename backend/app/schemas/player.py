@@ -49,8 +49,11 @@ class PlayerResponse(BaseModel):
     last_name: str
     company: str
     license_number: str
-    email: str |None
+    email: str
     model_config = {'from_attributes': True}
     
 
+class PlayerCreateResponse(BaseModel):
+    player: PlayerResponse
+    temp_password: str # C'est ici que le mot de passe en clair est retourné
 
