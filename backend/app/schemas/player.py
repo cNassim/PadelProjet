@@ -7,7 +7,7 @@ class PlayerCreate(BaseModel):
     last_name: str =Field(...,min_length = 2, max_length = 50)
     company: str = Field(..., min_length=2, max_length = 100)
     license_number: str = Field(...)
-    email : str | None = None #facultatif
+    email : EmailStr  #facultatif
 #	2-50 caractères, lettres et espaces uniquement
 #   2-50 caractères, lettres et espaces uniquement
 #   	2-100 caractères
@@ -41,9 +41,6 @@ class PlayerDelete(BaseModel):
     confirm: bool = Field(..., description="Doit être True pour confirmer la suppression")
 
 
-
-
-
 # Réponse API
 
 class PlayerResponse(BaseModel):
@@ -52,8 +49,8 @@ class PlayerResponse(BaseModel):
     last_name: str
     company: str
     license_number: str
-    email: str| None = None
+    email: str |None
+    model_config = {'from_attributes': True}
+    
 
-    model_config = {
-        "from_attributes": True  
-    }
+
