@@ -74,7 +74,7 @@ def update_pool(pool_id: int, pool_data: PoolCreate, db: Session = Depends(get_d
     if not pool:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pool not found.")
 
-    # Check no matches finished for any team in the pool
+    # Vérifier si il existe des matchs en cours.
     team_ids_in_pool = [t.id for t in pool.teams]
     if team_ids_in_pool:
         finished_match = db.query(Match).filter(
@@ -84,14 +84,14 @@ def update_pool(pool_id: int, pool_data: PoolCreate, db: Session = Depends(get_d
         if finished_match:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot modify pool: some matches have already been played.")
 
-    # Validate name uniqueness if changed
+    # Vérifier si le nom existe déjà
     if pool.name != pool_data.name:
         other = db.query(Pool).filter(Pool.name == pool_data.name).first()
         if other:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Pool name already exists.")
         pool.name = pool_data.name
 
-    # Validate team ids
+    # Vérifier team ids
     if not isinstance(pool_data.team_ids, list) or len(pool_data.team_ids) != 6:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Exactly 6 team IDs must be provided.")
 
@@ -99,13 +99,13 @@ def update_pool(pool_id: int, pool_data: PoolCreate, db: Session = Depends(get_d
     if len(new_teams) != 6:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="One or more team IDs are invalid.")
 
-    # Unassign teams that are no longer in the pool
+    # Unassign les équipes qui ne sont plus dans le pool.
     new_ids_set = set(pool_data.team_ids)
     for t in list(pool.teams):
         if t.id not in new_ids_set:
             t.pool_id = None
 
-    # Assign new teams to the pool
+    # Assign de nouvelle équipe dans le pool
     for t in new_teams:
         t.pool_id = pool.id
 
