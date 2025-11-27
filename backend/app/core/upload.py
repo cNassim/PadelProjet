@@ -111,3 +111,54 @@ async def save_upload_file(file: UploadFile) -> str:
     # Retourner le chemin relatif (URL)
     return f"/uploads/profiles/{unique_filename}"
 
+
+def delete_upload_file(file_url: Optional[str]) -> None:
+    """
+    Supprimer un fichier uploadé
+    
+    Args:
+        file_url: URL du fichier (ex: /uploads/profiles/xxx.jpg)
+    """
+    if not file_url:
+        return
+    
+    # Extraire le chemin du fichier depuis l'URL
+    # file_url format: /uploads/profiles/xxx.jpg
+    try:
+        # Retirer le "/" initial et construire le chemin
+        file_path = Path(file_url.lstrip('/'))
+        
+        # Vérifier que le fichier existe et le supprimer
+        if file_path.exists() and file_path.is_file():
+            file_path.unlink()
+    except Exception as e:
+        # Ne pas lever d'exception si la suppression échoue
+        # (le fichier peut déjà être supprimé ou ne jamais avoir existé)
+        print(f"Erreur lors de la suppression du fichier {file_url}: {e}")
+
+
+async def resize_image_if_needed(file_path: Path, max_size: tuple = RECOMMENDED_SIZE) -> None:
+    """
+    Redimensionner l'image si elle dépasse la taille recommandée
+    Conserve le ratio d'aspect
+    
+    Args:
+        file_path: Chemin du fichier image
+        max_size: Taille maximale (largeur, hauteur)
+    """
+    try:
+        with Image.open(file_path) as img:
+            # Convertir en RGB si nécessaire (pour les PNG avec transparence)
+            if img.mode in ('RGBA', 'LA', 'P'):
+                background = Image.new('RGB', img.size, (255, 255, 255))
+                if img.mode == 'P':
+                    img = img.convert('RGBA')
+                background.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
+                img = background
+            
+            # Redimensionner si nécessaire
+            if img.size[0] > max_size[0] or img.size[1] > max_size[1]:
+                img.thumbnail(max_size, Image.Resampling.LANCZOS)
+                img.save(file_path, quality=85, optimize=True)
+    except Exception as e:
+        print(f"Erreur lors du redimensionnement de l'image {file_path}: {e}")
