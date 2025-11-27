@@ -84,3 +84,30 @@ async def validate_image_file(file: UploadFile) -> None:
     # Remettre le pointeur au début pour la sauvegarde
     await file.seek(0)
 
+
+async def save_upload_file(file: UploadFile) -> str:
+    """
+    Sauvegarder le fichier uploadé
+    
+    Returns:
+        str: Chemin relatif du fichier sauvegardé (ex: /uploads/profiles/xxx.jpg)
+    """
+    
+    # Valider le fichier
+    await validate_image_file(file)
+    
+    # Créer le dossier si nécessaire
+    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    
+    # Générer un nom de fichier unique
+    unique_filename = generate_unique_filename(file.filename)
+    file_path = UPLOAD_DIR / unique_filename
+    
+    # Sauvegarder le fichier de manière asynchrone
+    async with aiofiles.open(file_path, 'wb') as f:
+        content = await file.read()
+        await f.write(content)
+    
+    # Retourner le chemin relatif (URL)
+    return f"/uploads/profiles/{unique_filename}"
+
