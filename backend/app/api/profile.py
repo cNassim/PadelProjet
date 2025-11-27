@@ -10,9 +10,12 @@ from app.schemas.profile import (
     ProfileResponse,
     ProfileUpdateRequest,
     ProfileUpdateResponse,
+    ChangePasswordRequest,
+    ChangePasswordResponse,
     UserInfo,
     PlayerInfo
 )
+from app.core.security import verify_password, get_password_hash
 from app.api.deps import get_current_user
 
 router = APIRouter()
@@ -143,5 +146,67 @@ def update_my_profile(
                 photo_url=player.photo_url
             ) if player else None
         )
+    )
+
+
+# ============================================
+# POST /profile/me/password - Changer le mot de passe
+# ============================================
+
+@router.post("/me/password", response_model=ChangePasswordResponse)
+def change_my_password(
+    password_data: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Changer le mot de passe de l'utilisateur connecté
+    
+    **Authentification** : Requise
+    
+    **Règles de validation** :
+    - Le mot de passe actuel doit être correct
+    - Le nouveau mot de passe doit respecter la politique de sécurité :
+      * Au moins 8 caractères
+      * Au moins 1 majuscule
+      * Au moins 1 minuscule
+      * Au moins 1 chiffre
+      * Au moins 1 caractère spécial
+    - Les deux nouveaux mots de passe doivent correspondre
+    - Le nouveau mot de passe doit être différent de l'ancien
+    """
+    
+    # Vérifier que le mot de passe actuel est correct
+    if not verify_password(password_data.current_password, current_user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Le mot de passe actuel est incorrect"
+        )
+    
+    # Vérifier que les nouveaux mots de passe correspondent
+    if password_data.new_password != password_data.confirm_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Les nouveaux mots de passe ne correspondent pas"
+        )
+    
+    # Vérifier que le nouveau mot de passe est différent de l'ancien
+    if verify_password(password_data.new_password, current_user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Le nouveau mot de passe doit être différent de l'ancien"
+        )
+    
+    # Mettre à jour le mot de passe
+    current_user.password_hash = get_password_hash(password_data.new_password)
+    
+    # Réinitialiser le flag "must_change_password" si nécessaire
+    if current_user.must_change_password:
+        current_user.must_change_password = False
+    
+    db.commit()
+    
+    return ChangePasswordResponse(
+        message="Mot de passe changé avec succès"
     )
 
