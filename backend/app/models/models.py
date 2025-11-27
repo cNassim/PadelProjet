@@ -27,7 +27,7 @@ class LoginAttempt(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, index=True, nullable=False)
-    attempts_count = Column(Integer, default=0)
+    attempts_count = Column(Integer, default=0, nullable=False)
     last_attempt = Column(DateTime(timezone=True))
     locked_until = Column(DateTime(timezone=True), nullable=True)
 

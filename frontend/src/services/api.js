@@ -1,8 +1,9 @@
 // ============================================
-// FICHIER : frontend/src/services/api.js
+// FICHIER : frontend/src/services/api.js (CORRIGÉ)
 // ============================================
 
 import axios from 'axios'
+import { useAuthStore } from '../stores/auth'
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1',
@@ -29,12 +30,21 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Token expiré ou invalide
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
-      window.location.href = '/login'
+    // ✅ FIX: Ne PAS rediriger si c'est une erreur de login (401 sur /auth/login)
+    // Laisser le composant Login gérer l'erreur 401
+    const isLoginRoute = error.config?.url?.includes('/auth/login')
+    
+    if (error.response?.status === 401 && !isLoginRoute) {
+      // Token expiré ou invalide (pas pendant le login)
+      const authStore = useAuthStore()
+      authStore.clearAuth()
+      
+      // Rediriger seulement si on n'est pas déjà sur /login
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login'
+      }
     }
+    
     return Promise.reject(error)
   }
 )
