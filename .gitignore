@@ -24,3 +24,8 @@ pnpm-debug.log*
 *.njsproj
 *.sln
 *.sw?
+
+# Base de données
+*.db
+*.sqlite3
+backend/padel_corpo.db
