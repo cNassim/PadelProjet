@@ -7,7 +7,7 @@ from app.database import get_db
 from app.models.models import Team, Pool, Match
 from app.schemas.pools import PoolCreate, PoolResponse
 
-router = APIRouter(prefix="/pools")
+router = APIRouter(prefix="/pools", tags=["Pools"])
 
 #Liste toutes les poules - GET {/pools}
 @router.get("/", response_model=dict)
@@ -64,7 +64,6 @@ def createPool(pool_data:PoolCreate, db: Session= Depends(get_db), _: dict = Dep
                     {"id": t.player2.id, "first_name": t.player2.first_name, "last_name": t.player2.last_name},
                 ],
     }
-
 
 
 # Modifier une poule (Admin UNIQUEMENT)- PUT /pools/{id} - cond: aucun match joué dans la poule.

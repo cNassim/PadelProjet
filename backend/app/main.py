@@ -35,7 +35,7 @@ async def add_security_headers(request, call_next):
 # Routes
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(admin.router, prefix="/api/v1/admin", tags=["Administration"])
-# app.include_router(pools.router, prefix="/api/pools", tags="Pools")
+app.include_router(pools.router)
 
 @app.get("/")
 def read_root():
