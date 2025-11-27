@@ -149,3 +149,22 @@ class ChangePasswordRequest(BaseModel):
         
         return v
 
+
+class ChangePasswordResponse(BaseModel):
+    """Réponse après changement de mot de passe"""
+    message: str
+
+
+# ============================================
+# Schémas pour photo de profil
+# ============================================
+
+class PhotoUploadResponse(BaseModel):
+    """Réponse après upload de photo"""
+    message: str
+    photo_url: str
+
+
+class PhotoDeleteResponse(BaseModel):
+    """Réponse après suppression de photo"""
+    message: str
