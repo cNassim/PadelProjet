@@ -1,18 +1,18 @@
-'''
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import Optional
 from app.database import get_db
 from app.models.models import Team, Player, Pool, Match
 from app.schemas.team import TeamCreate, TeamResponse
-from app.schemas.auth import get_current_admin_user  # à adapter selon ton système d'auth
+from app.api.deps import get_current_admin ,get_current_user # à adapter selon ton système d'auth
 
 router = APIRouter(prefix="/teams", tags=["Teams"])
 
 # -----------------------------
 # GET /teams
 # -----------------------------
-@router.get("/", response_model=dict)
+@router.get("/", response_model=dict, dependencies=[Depends(get_current_user)])
 def list_teams(
     pool_id: Optional[int] = Query(None),
     company: Optional[str] = Query(None),
@@ -43,7 +43,7 @@ def list_teams(
 # -----------------------------
 # POST /teams
 # -----------------------------
-@router.post("/", response_model=TeamResponse, dependencies=[Depends(get_current_admin_user)])
+@router.post("/", response_model=TeamResponse, dependencies=[Depends(get_current_admin)])
 def create_team(team_data: TeamCreate, db: Session = Depends(get_db)):
     player1 = db.query(Player).filter(Player.id == team_data.player1_id).first()
     player2 = db.query(Player).filter(Player.id == team_data.player2_id).first()
@@ -96,7 +96,7 @@ def create_team(team_data: TeamCreate, db: Session = Depends(get_db)):
 # -----------------------------
 # PUT /teams/{id}
 # -----------------------------
-@router.put("/{team_id}", response_model=TeamResponse, dependencies=[Depends(get_current_admin_user)])
+@router.put("/{team_id}", response_model=TeamResponse, dependencies=[Depends(get_current_admin)])
 def update_team(team_id: int, team_data: TeamCreate, db: Session = Depends(get_db)):
     team = db.query(Team).filter(Team.id == team_id).first()
     if not team:
@@ -121,7 +121,7 @@ def update_team(team_id: int, team_data: TeamCreate, db: Session = Depends(get_d
 # -----------------------------
 # DELETE /teams/{id}
 # -----------------------------
-@router.delete("/{team_id}", dependencies=[Depends(get_current_admin_user)])
+@router.delete("/{team_id}", dependencies=[Depends(get_current_admin)])
 def delete_team(team_id: int, db: Session = Depends(get_db)):
     team = db.query(Team).filter(Team.id == team_id).first()
     if not team:
@@ -136,4 +136,3 @@ def delete_team(team_id: int, db: Session = Depends(get_db)):
     db.delete(team)
     db.commit()
     return {"detail": "Équipe supprimée avec succès."}
-'''
