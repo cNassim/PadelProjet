@@ -2,7 +2,7 @@
 # FICHIER : backend/app/api/profile.py
 # ============================================
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.models import User, Player
@@ -12,10 +12,12 @@ from app.schemas.profile import (
     ProfileUpdateResponse,
     ChangePasswordRequest,
     ChangePasswordResponse,
+    PhotoUploadResponse,
     UserInfo,
     PlayerInfo
 )
 from app.core.security import verify_password, get_password_hash
+from app.core.upload import save_upload_file, delete_upload_file
 from app.api.deps import get_current_user
 
 router = APIRouter()
@@ -208,5 +210,60 @@ def change_my_password(
     
     return ChangePasswordResponse(
         message="Mot de passe changé avec succès"
+    )
+
+
+# ============================================
+# POST /profile/me/photo - Upload photo de profil
+# ============================================
+
+@router.post("/me/photo", response_model=PhotoUploadResponse)
+async def upload_profile_photo(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Upload d'une photo de profil
+    
+    **Authentification** : Requise
+    
+    **Disponible uniquement pour les utilisateurs avec profil joueur**
+    
+    **Règles de validation** :
+    - Formats acceptés : .jpg, .jpeg, .png
+    - Taille maximale : 2MB
+    - Dimensions recommandées : 400x400px
+    - Le fichier doit être une image valide
+    
+    **Comportement** :
+    - Si une photo existe déjà, elle est automatiquement supprimée
+    - Le fichier est renommé avec un token unique pour éviter les conflits
+    """
+    
+    # Récupérer le joueur associé
+    player = db.query(Player).filter(Player.user_id == current_user.id).first()
+    
+    if not player:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Fonctionnalité réservée aux utilisateurs avec profil joueur"
+        )
+    
+    # Supprimer l'ancienne photo si elle existe
+    if player.photo_url:
+        delete_upload_file(player.photo_url)
+    
+    # Sauvegarder le nouveau fichier
+    photo_url = await save_upload_file(file)
+    
+    # Mettre à jour le profil
+    player.photo_url = photo_url
+    db.commit()
+    db.refresh(player)
+    
+    return PhotoUploadResponse(
+        message="Photo de profil uploadée avec succès",
+        photo_url=photo_url
     )
 
