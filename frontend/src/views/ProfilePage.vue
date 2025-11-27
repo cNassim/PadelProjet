@@ -324,3 +324,130 @@ const loadProfile = async () => {
     loading.value = false
   }
 }
+
+// Mettre à jour le profil
+const handleUpdateProfile = async () => {
+  try {
+    updatingProfile.value = true
+    infoMessage.value = null
+    
+    const data = {
+      email: profileForm.email
+    }
+    
+    // Ajouter les champs joueur si applicable
+    if (profile.value.player) {
+      if (profileForm.first_name) data.first_name = profileForm.first_name
+      if (profileForm.last_name) data.last_name = profileForm.last_name
+      if (profileForm.birth_date) data.birth_date = profileForm.birth_date
+    }
+    
+    const result = await profileService.updateProfile(data)
+    profile.value = result.profile
+    
+    infoMessage.value = {
+      type: 'success',
+      text: '✅ Profil mis à jour avec succès'
+    }
+  } catch (error) {
+    infoMessage.value = {
+      type: 'error',
+      text: error.response?.data?.detail || 'Erreur lors de la mise à jour'
+    }
+  } finally {
+    updatingProfile.value = false
+  }
+}
+
+// Changer le mot de passe
+const handleChangePassword = async () => {
+  try {
+    changingPassword.value = true
+    passwordMessage.value = null
+    
+    await profileService.changePassword(passwordForm)
+    
+    passwordMessage.value = {
+      type: 'success',
+      text: '✅ Mot de passe changé avec succès'
+    }
+    
+    // Réinitialiser le formulaire
+    passwordForm.current_password = ''
+    passwordForm.new_password = ''
+    passwordForm.confirm_password = ''
+  } catch (error) {
+    passwordMessage.value = {
+      type: 'error',
+      text: error.response?.data?.detail || 'Erreur lors du changement de mot de passe'
+    }
+  } finally {
+    changingPassword.value = false
+  }
+}
+
+// Upload photo
+const handlePhotoSelect = async (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+  
+  // Vérifier la taille (2MB max)
+  if (file.size > 2 * 1024 * 1024) {
+    infoMessage.value = {
+      type: 'error',
+      text: 'Le fichier est trop volumineux (max 2MB)'
+    }
+    return
+  }
+  
+  try {
+    uploadingPhoto.value = true
+    const result = await profileService.uploadPhoto(file)
+    
+    // Rafraîchir le profil
+    await loadProfile()
+    
+    infoMessage.value = {
+      type: 'success',
+      text: '✅ Photo uploadée avec succès'
+    }
+  } catch (error) {
+    infoMessage.value = {
+      type: 'error',
+      text: error.response?.data?.detail || 'Erreur lors de l\'upload'
+    }
+  } finally {
+    uploadingPhoto.value = false
+    event.target.value = '' // Reset input
+  }
+}
+
+// Supprimer photo
+const handleDeletePhoto = async () => {
+  if (!confirm('Êtes-vous sûr de vouloir supprimer votre photo ?')) return
+  
+  try {
+    deletingPhoto.value = true
+    await profileService.deletePhoto()
+    
+    // Rafraîchir le profil
+    await loadProfile()
+    
+    infoMessage.value = {
+      type: 'success',
+      text: '✅ Photo supprimée avec succès'
+    }
+  } catch (error) {
+    infoMessage.value = {
+      type: 'error',
+      text: error.response?.data?.detail || 'Erreur lors de la suppression'
+    }
+  } finally {
+    deletingPhoto.value = false
+  }
+}
+
+onMounted(() => {
+  loadProfile()
+})
+</script>
