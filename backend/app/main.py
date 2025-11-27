@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.api import auth,teams, pools
+
+from app.api import auth, teams, pools, events
 from app.database import engine
 from app.models import models
 
@@ -17,7 +18,7 @@ app = FastAPI(
 # Configuration CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.allowed_origins,  # ← Changé de ALLOWED_ORIGINS
+    allow_origins=settings.allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -32,9 +33,17 @@ async def add_security_headers(request, call_next):
     response.headers["X-XSS-Protection"] = "1; mode=block"
     return response
 
-# Routes
+# --- ROUTES ---
+
+# Authentification
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
-# app.include_router(pools.router, prefix="/api/pools", tags="Pools")
+
+
+app.include_router(events.router, prefix="/api/v1", tags=["Events & Matches"])
+
+
+# app.include_router(pools.router, prefix="/api/v1", tags=["Pools"])
+# app.include_router(teams.router, prefix="/api/v1", tags=["Teams"])
 
 @app.get("/")
 def read_root():
@@ -43,5 +52,3 @@ def read_root():
 @app.get("/health")
 def health_check():
     return {"status": "healthy"}
-'''
-app.include_router(teams.router)'''
