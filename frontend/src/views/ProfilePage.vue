@@ -271,3 +271,56 @@
     </div>
   </div>
 </template>
+
+<script setup>
+import { ref, reactive, onMounted } from 'vue'
+import profileService from '../services/profile'
+
+// État
+const loading = ref(true)
+const profile = ref(null)
+const activeTab = ref('info')
+
+// Formulaire informations
+const profileForm = reactive({
+  email: '',
+  first_name: '',
+  last_name: '',
+  birth_date: ''
+})
+const updatingProfile = ref(false)
+const infoMessage = ref(null)
+
+// Formulaire mot de passe
+const passwordForm = reactive({
+  current_password: '',
+  new_password: '',
+  confirm_password: ''
+})
+const changingPassword = ref(false)
+const passwordMessage = ref(null)
+
+// Photo
+const uploadingPhoto = ref(false)
+const deletingPhoto = ref(false)
+const fileInput = ref(null)
+
+// Charger le profil
+const loadProfile = async () => {
+  try {
+    loading.value = true
+    profile.value = await profileService.getMyProfile()
+    
+    // Remplir le formulaire
+    profileForm.email = profile.value.user.email
+    if (profile.value.player) {
+      profileForm.first_name = profile.value.player.first_name || ''
+      profileForm.last_name = profile.value.player.last_name || ''
+      profileForm.birth_date = profile.value.player.birth_date || ''
+    }
+  } catch (error) {
+    console.error('Erreur chargement profil:', error)
+  } finally {
+    loading.value = false
+  }
+}
