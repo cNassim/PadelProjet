@@ -35,7 +35,7 @@ def check_and_update_attempts(db: Session, email: str, success: bool):
         db.commit()
         return {"blocked": False}
 
-    attempt.attempts_count = (attempt.attempts_count or 0) + 5
+    attempt.attempts_count = (attempt.attempts_count or 0) + 1
     attempt.last_attempt = now
 
     if attempt.attempts_count >= MAX_ATTEMPTS:
