@@ -13,6 +13,7 @@ from app.schemas.profile import (
     ChangePasswordRequest,
     ChangePasswordResponse,
     PhotoUploadResponse,
+    PhotoDeleteResponse,
     UserInfo,
     PlayerInfo
 )
@@ -265,5 +266,54 @@ async def upload_profile_photo(
     return PhotoUploadResponse(
         message="Photo de profil uploadée avec succès",
         photo_url=photo_url
+    )
+
+
+# ============================================
+# DELETE /profile/me/photo - Supprimer la photo de profil
+# ============================================
+
+@router.delete("/me/photo", response_model=PhotoDeleteResponse)
+def delete_profile_photo(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Supprimer la photo de profil
+    
+    **Authentification** : Requise
+    
+    **Disponible uniquement pour les utilisateurs avec profil joueur**
+    
+    **Comportement** :
+    - Supprime le fichier du disque
+    - Met à jour la base de données (photo_url = NULL)
+    """
+    
+    # Récupérer le joueur associé
+    player = db.query(Player).filter(Player.user_id == current_user.id).first()
+    
+    if not player:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Fonctionnalité réservée aux utilisateurs avec profil joueur"
+        )
+    
+    # Vérifier qu'une photo existe
+    if not player.photo_url:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Aucune photo de profil à supprimer"
+        )
+    
+    # Supprimer le fichier
+    delete_upload_file(player.photo_url)
+    
+    # Mettre à jour la base de données
+    player.photo_url = None
+    db.commit()
+    
+    return PhotoDeleteResponse(
+        message="Photo de profil supprimée avec succès"
     )
 
