@@ -1,9 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
-from app.api import auth, teams, pools, admin
+from app.api import auth, teams, pools, admin, profile
 from app.database import engine
 from app.models import models
+from pathlib import Path
 
 # Créer les tables
 models.Base.metadata.create_all(bind=engine)
@@ -35,7 +37,13 @@ async def add_security_headers(request, call_next):
 # Routes
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(admin.router, prefix="/api/v1/admin", tags=["Administration"])
+app.include_router(profile.router, prefix="/api/v1/profile", tags=["Profile"])
 # app.include_router(pools.router, prefix="/api/pools", tags="Pools")
+
+# Servir les fichiers statiques (photos de profil)
+uploads_path = Path("uploads")
+if uploads_path.exists():
+    app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 @app.get("/")
 def read_root():
