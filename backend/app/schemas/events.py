@@ -1,6 +1,11 @@
+# ============================================
+# FICHIER : backend/app/schemas/events.py
+# ============================================
+
 from pydantic import BaseModel, field_validator, model_validator
 from datetime import date
 from typing import List, Optional
+from backend.app.schemas.team import TeamResponse  # ✅ Import nécessaire pour afficher les équipes
 
 # --- SCHEMAS MATCH ---
 class MatchBase(BaseModel):
@@ -18,7 +23,6 @@ class MatchCreate(MatchBase):
 
     @field_validator('team2_id')
     def validate_teams_diff(cls, v, values):
-        # Note: validation basique ici, la validation complète se fait dans Event
         return v
 
 class MatchResponse(MatchBase):
@@ -29,6 +33,10 @@ class MatchResponse(MatchBase):
     status: str
     score_team1: Optional[str] = None
     score_team2: Optional[str] = None
+    
+    # ✅ AJOUT : Objets complets pour l'affichage (Entreprise, Joueurs...)
+    team1: Optional[TeamResponse] = None
+    team2: Optional[TeamResponse] = None
 
     class Config:
         from_attributes = True
@@ -40,8 +48,8 @@ class EventBase(BaseModel):
 
     @field_validator('event_date')
     def validate_date(cls, v):
-        if v < date.today():
-            raise ValueError("La date de l'événement ne peut pas être dans le passé")
+        # On autorise les dates passées pour l'historique, 
+        # mais pour la création on pourrait restreindre.
         return v
 
 class EventCreate(EventBase):
@@ -53,29 +61,27 @@ class EventCreate(EventBase):
             raise ValueError("Un événement doit contenir entre 1 et 3 matchs")
         return v
 
-    # --- VALIDATION COMPLEXE (Règles métier) ---
     @model_validator(mode='after')
     def validate_uniqueness(self):
         matches = self.matches
-        
-        # 1. Pas de piste en double
         courts = [m.court_number for m in matches]
         if len(courts) != len(set(courts)):
-            raise ValueError("Impossible d'utiliser la même piste deux fois pour le même événement")
-
-        # 2. Une équipe ne joue qu'une fois
+            raise ValueError("Impossible d'utiliser la même piste deux fois")
+        
         teams_seen = set()
         for m in matches:
             if m.team1_id == m.team2_id:
                 raise ValueError("Une équipe ne peut pas jouer contre elle-même")
-            
             if m.team1_id in teams_seen or m.team2_id in teams_seen:
-                 raise ValueError(f"Une équipe joue déjà dans cet événement (ID dupliqué)")
-            
+                 raise ValueError(f"Une équipe joue déjà dans cet événement")
             teams_seen.add(m.team1_id)
             teams_seen.add(m.team2_id)
-        
         return self
+
+# ✅ AJOUT : Schéma spécifique pour la modification (partielle)
+class EventUpdate(BaseModel):
+    event_date: Optional[date] = None
+    event_time: Optional[str] = None
 
 class EventResponse(EventBase):
     id: int
@@ -84,6 +90,5 @@ class EventResponse(EventBase):
     class Config:
         from_attributes = True
 
-# --- WRAPPER DE RÉPONSE (Le format demandé dans le CDC) ---
 class EventListResponse(BaseModel):
     events: List[EventResponse]

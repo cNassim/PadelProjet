@@ -8,6 +8,9 @@ import HomePage from '../views/HomePage.vue'
 import LoginPage from '../views/LoginPage.vue'
 import AdminPage from '../views/AdminPage.vue'
 import ProfilePage from '../views/ProfilePage.vue'
+import MatchesPage from '../views/MatchesPage.vue'
+import ResultsPage from '../views/ResultsPage.vue'
+import PlanningPage from '../views/PlanningPage.vue'
 
 const routes = [
   {
@@ -33,8 +36,23 @@ const routes = [
     name: 'profile',
     component: ProfilePage,
     meta: { requiresAuth: true }
-  }
-  // TODO: Ajouter les autres routes (Planning, Matchs, Résultats)
+  },{
+    path: '/matches',
+    name: 'matches',
+    component: MatchesPage,
+    meta: { requiresAuth: true }
+  },{
+    path: '/results',
+    name: 'results',
+    component: ResultsPage,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/planning',
+    name: 'planning',
+    component: PlanningPage,
+    meta: { requiresAuth: true }
+  },
 ]
 
 const router = createRouter({

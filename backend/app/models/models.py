@@ -89,6 +89,11 @@ class Team(Base):
     pool = relationship("Pool", back_populates="teams")
     matches_as_team1 = relationship("Match", back_populates="team1", foreign_keys="[Match.team1_id]")
     matches_as_team2 = relationship("Match", back_populates="team2", foreign_keys="[Match.team2_id]")
+    
+    # ✅ AJOUT : Propriété virtuelle pour la compatibilité avec les schémas Pydantic
+    @property
+    def players(self):
+        return [self.player1, self.player2]
 
 
 

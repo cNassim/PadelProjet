@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import List, Optional
-from app.schemas.team import TeamResponse
+from backend.app.schemas.team import TeamResponse
 
 
 class PoolCreate(BaseModel):
