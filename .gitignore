@@ -11,6 +11,12 @@ backend/.env
 
 .DS_Store
 
+# Uploads (fichiers uploadés par les utilisateurs)
+backend/uploads/profiles/*.jpg
+backend/uploads/profiles/*.jpeg
+backend/uploads/profiles/*.png
+!backend/uploads/.gitkeep
+
 # Log files
 npm-debug.log*
 yarn-debug.log*
