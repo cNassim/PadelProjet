@@ -105,6 +105,8 @@ Consultez le cahier des charges complet pour les spécifications détaillées.
 - ✅ Page de login
 - ✅ Navigation avec guards
 
+
+
 ## 🎯 À développer
 
 Toutes les autres fonctionnalités selon le cahier des charges :
