@@ -29,6 +29,13 @@
           </router-link>
           <router-link 
             v-if="authStore.isAdmin" 
+            to="/teams" 
+            class="px-3 py-2 rounded hover:bg-blue-700"
+          >
+            Équipes
+          </router-link>
+          <router-link 
+            v-if="authStore.isAdmin" 
             to="/admin" 
             class="px-3 py-2 rounded hover:bg-blue-700"
           >
