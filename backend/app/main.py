@@ -42,7 +42,7 @@ app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
 # 2. Administration (✅ On garde leur travail)
 app.include_router(admin.router, prefix="/api/v1/admin", tags=["Administration"])
 app.include_router(profile.router, prefix="/api/v1/profile", tags=["Profile"])
-# app.include_router(pools.router, prefix="/api/pools", tags="Pools")
+
 
 # 3. Événements (✅ On garde ton travail)
 app.include_router(events.router, prefix="/api/v1/events", tags=["Events & Matches"])
