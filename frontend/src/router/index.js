@@ -7,6 +7,9 @@ import { useAuthStore } from '../stores/auth'
 import HomePage from '../views/HomePage.vue'
 import LoginPage from '../views/LoginPage.vue'
 import AdminPage from '../views/AdminPage.vue'
+import ProfilePage from '../views/ProfilePage.vue'
+import TeamList from '../views/TeamList.vue'
+import TeamForm from '../views/TeamForm.vue'
 
 const routes = [
   {
@@ -26,9 +29,37 @@ const routes = [
     name: 'admin',
     component: AdminPage,
     meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/profile',
+    name: 'profile',
+    component: ProfilePage,
+    meta: { requiresAuth: true }
   }
-  // TODO: Ajouter les autres routes (Planning, Matchs, Résultats, Profil)
+  // TODO: Ajouter les autres routes (Planning, Matchs, Résultats)
 ]
+
+// Routes Team (admin uniquement)
+routes.push(
+  {
+    path: '/teams',
+    name: 'teams',
+    component: TeamList,
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/teams/new',
+    name: 'team-new',
+    component: TeamForm,
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/teams/:id/edit',
+    name: 'team-edit',
+    component: TeamForm,
+    meta: { requiresAuth: true, requiresAdmin: true }
+  }
+)
 
 const router = createRouter({
   history: createWebHistory(),

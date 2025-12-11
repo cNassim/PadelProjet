@@ -1,9 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
-from app.api import auth,teams, players
+from app.api import auth, players, teams, pools, admin, profile, events, admin
 from app.database import engine
 from app.models import models
+from pathlib import Path
 
 # Créer les tables
 models.Base.metadata.create_all(bind=engine)
@@ -17,7 +19,7 @@ app = FastAPI(
 # Configuration CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.allowed_origins,  # ← Changé de ALLOWED_ORIGINS
+    allow_origins=settings.allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -32,9 +34,27 @@ async def add_security_headers(request, call_next):
     response.headers["X-XSS-Protection"] = "1; mode=block"
     return response
 
-# Routes
+# --- ROUTES ---
+
+# 1. Authentification
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
-# app.include_router(pools.router, prefix="/api/pools", tags="Pools")
+
+# 2. Administration (✅ On garde leur travail)
+app.include_router(admin.router, prefix="/api/v1/admin", tags=["Administration"])
+app.include_router(profile.router, prefix="/api/v1/profile", tags=["Profile"])
+
+
+# 3. Événements (✅ On garde ton travail)
+app.include_router(events.router, prefix="/api/v1/events", tags=["Events & Matches"])
+
+# 4. Pools et Teams (✅ On garde leur activation de teams/pools)
+app.include_router(players.router)
+app.include_router(pools.router, prefix="/api/v1/pools", tags=["Pools"])
+app.include_router(teams.router, prefix="/api/v1/teams", tags=["Teams"])
+# Servir les fichiers statiques (photos de profil)
+uploads_path = Path("uploads")
+if uploads_path.exists():
+    app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 @app.get("/")
 def read_root():
@@ -43,7 +63,3 @@ def read_root():
 @app.get("/health")
 def health_check():
     return {"status": "healthy"}
-
-app.include_router(teams.router)
-
-app.include_router(players.router)

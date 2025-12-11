@@ -1,3 +1,5 @@
+from datetime import date
+from typing import Optional
 from pydantic import BaseModel, EmailStr, validator, Field
 import re
 
@@ -6,8 +8,10 @@ class PlayerCreate(BaseModel):
     first_name: str = Field(..., min_length = 2, max_length = 50)
     last_name: str =Field(...,min_length = 2, max_length = 50)
     company: str = Field(..., min_length=2, max_length = 100)
-    license_number: str = Field(...)
-    email : EmailStr  #facultatif
+    license_number: str = Field(...)  
+    email : EmailStr  | None #facultatif
+    birth_date: date | None
+    photo_url: str | None
 #	2-50 caractères, lettres et espaces uniquement
 #   2-50 caractères, lettres et espaces uniquement
 #   	2-100 caractères
@@ -29,6 +33,8 @@ class PlayerUpdate(BaseModel):
     first_name: str = Field(..., min_length=2, max_length=50)
     last_name: str = Field(..., min_length=2, max_length=50)
     company: str = Field(..., min_length=2, max_length=100)
+    birth_date: date | None
+    photo_url: str | None
 
     @validator('first_name', 'last_name')
     def validate_names(cls, v):
@@ -48,12 +54,19 @@ class PlayerResponse(BaseModel):
     first_name: str
     last_name: str
     company: str
-    license_number: str
-    email: str
+    license_number: str 
+    birth_date: date | None = None   # ⬅⬅⬅ IMPORTANT  # ⬅⬅⬅ OBLIGATOIRE
+    photo_url: str | None = None
+    email: str | None
+    has_account: bool
     model_config = {'from_attributes': True}
+
+class PlayersListResponse(BaseModel):
+    total: int
+    players: list[PlayerResponse]
     
 
 class PlayerCreateResponse(BaseModel):
+    """Schéma de réponse lors de la création d'un joueur (sans compte)"""
     player: PlayerResponse
-    temp_password: str # C'est ici que le mot de passe en clair est retourné
 
