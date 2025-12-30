@@ -15,5 +15,5 @@ class PoolResponse(BaseModel):
     teams: List[TeamResponse]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 

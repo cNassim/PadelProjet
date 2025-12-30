@@ -1,16 +1,18 @@
-
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import Optional
 from app.database import get_db
 from app.models.models import Team, Player, Pool, Match
+# ✅ CORRECTION IMPORT : On utilise "team" (singulier) comme ton fichier
 from app.schemas.team import TeamCreate, TeamResponse
-from app.api.deps import get_current_admin ,get_current_user # à adapter selon ton système d'auth
+from app.api.deps import get_current_admin, get_current_user
 
-router = APIRouter(prefix="/teams", tags=["Teams"])
+# ✅ CORRECTION ROUTER : On enlève 'prefix="/teams"' car main.py le fait déjà
+# L'URL finale sera bien /api/v1/teams
+router = APIRouter(tags=["Teams"])
 
 # -----------------------------
-# GET /teams
+# GET / (correspond à GET /api/v1/teams)
 # -----------------------------
 @router.get("/", response_model=dict, dependencies=[Depends(get_current_user)])
 def list_teams(
@@ -18,30 +20,41 @@ def list_teams(
     company: Optional[str] = Query(None),
     db: Session = Depends(get_db)
 ):
-    query = db.query(Team)
+    # Optimisation : On charge les joueurs et la poule en une seule requête
+    query = db.query(Team).options(
+        joinedload(Team.player1),
+        joinedload(Team.player2),
+        joinedload(Team.pool)
+    )
+
     if pool_id:
         query = query.filter(Team.pool_id == pool_id)
     if company:
         query = query.filter(Team.company.ilike(f"%{company}%"))
 
     teams = query.all()
+    
+    # Construction manuelle de la réponse pour correspondre à ton format attendu
     data = []
     for t in teams:
-        players = [t.player1, t.player2]
-        pool = t.pool
+        # Comme on a utilisé joinedload, t.player1 et t.player2 sont déjà chargés
+        players_list = []
+        if t.player1:
+            players_list.append({"id": t.player1.id, "first_name": t.player1.first_name, "last_name": t.player1.last_name})
+        if t.player2:
+            players_list.append({"id": t.player2.id, "first_name": t.player2.first_name, "last_name": t.player2.last_name})
+
         data.append({
             "id": t.id,
             "company": t.company,
-            "players": [
-                {"id": p.id, "first_name": p.first_name, "last_name": p.last_name} for p in players
-            ],
-            "pool": {"id": pool.id, "name": pool.name} if pool else None
+            "players": players_list,
+            "pool": {"id": t.pool.id, "name": t.pool.name} if t.pool else None
         })
 
     return {"teams": data, "total": len(data)}
 
 # -----------------------------
-# POST /teams
+# POST /
 # -----------------------------
 @router.post("/", response_model=TeamResponse, dependencies=[Depends(get_current_admin)])
 def create_team(team_data: TeamCreate, db: Session = Depends(get_db)):
@@ -83,18 +96,10 @@ def create_team(team_data: TeamCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_team)
 
-    return {
-        "id": new_team.id,
-        "company": new_team.company,
-        "players": [
-            {"id": player1.id, "first_name": player1.first_name, "last_name": player1.last_name},
-            {"id": player2.id, "first_name": player2.first_name, "last_name": player2.last_name}
-        ],
-        "pool": {"id": pool.id, "name": pool.name} if pool else None
-    }
+    return new_team
 
 # -----------------------------
-# PUT /teams/{id}
+# PUT /{id}
 # -----------------------------
 @router.put("/{team_id}", response_model=TeamResponse, dependencies=[Depends(get_current_admin)])
 def update_team(team_id: int, team_data: TeamCreate, db: Session = Depends(get_db)):
@@ -119,7 +124,7 @@ def update_team(team_id: int, team_data: TeamCreate, db: Session = Depends(get_d
     return team
 
 # -----------------------------
-# DELETE /teams/{id}
+# DELETE /{id}
 # -----------------------------
 @router.delete("/{team_id}", dependencies=[Depends(get_current_admin)])
 def delete_team(team_id: int, db: Session = Depends(get_db)):

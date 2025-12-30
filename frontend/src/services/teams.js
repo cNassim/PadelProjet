@@ -1,11 +1,31 @@
+// ============================================
+// FICHIER : frontend/src/services/teams.js
+// ============================================
+
 import api from './api'
 
-export const teamAPI = {
-  list: () => api.get('/teams'),
-  get: (id) => api.get(`/teams/${id}`),
-  create: (payload) => api.post('/teams', payload),
-  update: (id, payload) => api.put(`/teams/${id}`, payload),
-  remove: (id) => api.delete(`/teams/${id}`)
-}
+export default {
+  /**
+   * Récupérer la liste des équipes
+   * @param {Object} params - { pool_id, company }
+   */
+  async getTeams(params = {}) {
+    const response = await api.get('/teams', { params })
+    return response.data
+  },
 
-export default teamAPI
+  // Ces méthodes serviront plus tard pour la gestion des équipes
+  async createTeam(data) {
+    const response = await api.post('/teams', data)
+    return response.data
+  },
+
+  async updateTeam(id, data) {
+    const response = await api.put(`/teams/${id}`, data)
+    return response.data
+  },
+
+  async deleteTeam(id) {
+    await api.delete(`/teams/${id}`)
+  }
+}

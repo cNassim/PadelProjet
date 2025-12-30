@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
-from app.api import auth, players, teams, pools, admin, profile, events, admin
+from app.api import auth, teams, pools, admin, profile, events, matches, results
 from app.database import engine
 from app.models import models
 from pathlib import Path
@@ -46,11 +46,15 @@ app.include_router(profile.router, prefix="/api/v1/profile", tags=["Profile"])
 
 # 3. Événements (✅ On garde ton travail)
 app.include_router(events.router, prefix="/api/v1/events", tags=["Events & Matches"])
-
+app.include_router(matches.router, prefix="/api/v1/matches", tags=["Matches"])
 # 4. Pools et Teams (✅ On garde leur activation de teams/pools)
 app.include_router(players.router)
 app.include_router(pools.router, prefix="/api/v1/pools", tags=["Pools"])
 app.include_router(teams.router, prefix="/api/v1/teams", tags=["Teams"])
+
+# 5. Résultats (✅ On garde ton travail)
+app.include_router(results.router, prefix="/api/v1/results", tags=["Results"])
+
 # Servir les fichiers statiques (photos de profil)
 uploads_path = Path("uploads")
 if uploads_path.exists():

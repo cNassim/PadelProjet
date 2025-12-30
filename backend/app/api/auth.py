@@ -13,20 +13,23 @@ MAX_ATTEMPTS = 5
 LOCKOUT_MINUTES = 30
 
 def check_and_update_attempts(db: Session, email: str, success: bool):
+    """Check login attempts and enforce lockout policy"""
+    now = datetime.utcnow()
+    
     attempt = db.query(LoginAttempt).filter(LoginAttempt.email == email).first()
 
     if not attempt:
         attempt = LoginAttempt(email=email)
         db.add(attempt)
+        db.flush()
 
-    now = datetime.utcnow()
-
+    # Check if account is locked
     if attempt.locked_until and attempt.locked_until > now:
         minutes_remaining = int((attempt.locked_until - now).total_seconds() / 60)
         return {
             "blocked": True,
             "minutes_remaining": minutes_remaining,
-            "locked_until": attempt.locked_until.isoformat()  # ✅ FIX
+            "locked_until": attempt.locked_until.isoformat()
         }
 
     if success:
@@ -35,6 +38,7 @@ def check_and_update_attempts(db: Session, email: str, success: bool):
         db.commit()
         return {"blocked": False}
 
+    # Increment failed attempts
     attempt.attempts_count = (attempt.attempts_count or 0) + 1
     attempt.last_attempt = now
 
@@ -44,7 +48,7 @@ def check_and_update_attempts(db: Session, email: str, success: bool):
         return {
             "blocked": True,
             "minutes_remaining": LOCKOUT_MINUTES,
-            "locked_until": attempt.locked_until.isoformat()  # ✅ FIX
+            "locked_until": attempt.locked_until.isoformat()
         }
 
     db.commit()
@@ -55,6 +59,28 @@ def check_and_update_attempts(db: Session, email: str, success: bool):
 
 @router.post("/login", response_model=TokenResponse)
 def login(credentials: LoginRequest, db: Session = Depends(get_db)):
+    # Check if account is locked BEFORE verifying credentials
+    now = datetime.utcnow()
+    attempt = db.query(LoginAttempt).filter(LoginAttempt.email == credentials.email).first()
+    
+    if attempt and attempt.locked_until:
+        if attempt.locked_until > now:
+            minutes_remaining = int((attempt.locked_until - now).total_seconds() / 60)
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail={
+                    "message": "Compte bloqué",
+                    "blocked": True,
+                    "minutes_remaining": minutes_remaining,
+                    "locked_until": attempt.locked_until.isoformat()
+                }
+            )
+        else:
+            # Blocage expiré, reset les tentatives
+            attempt.attempts_count = 0
+            attempt.locked_until = None
+            db.commit()
+    
     user = db.query(User).filter(User.email == credentials.email).first()
 
     if not user or not verify_password(credentials.password, user.password_hash):
@@ -62,7 +88,7 @@ def login(credentials: LoginRequest, db: Session = Depends(get_db)):
 
         if check.get("blocked"):
             raise HTTPException(
-                status_code=403,
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                 detail={
                     "message": "Compte bloqué",
                     "blocked": True,
@@ -72,7 +98,7 @@ def login(credentials: LoginRequest, db: Session = Depends(get_db)):
             )
 
         raise HTTPException(
-            status_code=401,
+            status_code=status.HTTP_401_UNAUTHORIZED,
             detail={
                 "message": "Email ou mot de passe incorrect",
                 "attempts_remaining": check.get("attempts_remaining")
@@ -80,7 +106,10 @@ def login(credentials: LoginRequest, db: Session = Depends(get_db)):
         )
 
     if not user.is_active:
-        raise HTTPException(status_code=403, detail="Compte désactivé")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Compte désactivé"
+        )
 
     check_and_update_attempts(db, credentials.email, success=True)
 
