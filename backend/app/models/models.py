@@ -31,6 +31,7 @@ class LoginAttempt(Base):
     last_attempt = Column(DateTime(timezone=True))
     locked_until = Column(DateTime(timezone=True), nullable=True)
 
+
 class Player(Base):
     __tablename__="players"
     id = Column(Integer, primary_key=True, index=True)
