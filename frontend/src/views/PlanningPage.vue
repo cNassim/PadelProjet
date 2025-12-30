@@ -167,6 +167,7 @@
                   <div>
                     <label class="block mb-1 text-xs font-medium text-gray-600">Équipe 1</label>
                     <select v-model="match.team1_id" required class="w-full px-2 py-1.5 text-sm border rounded">
+                      <option value="" disabled>-- Choisir une équipe --</option>
                       <option v-for="team in teams" :key="team.id" :value="team.id">
                         {{ team.company }} ({{ team.players[0]?.last_name }})
                       </option>
@@ -175,6 +176,7 @@
                   <div>
                     <label class="block mb-1 text-xs font-medium text-gray-600">Équipe 2</label>
                     <select v-model="match.team2_id" required class="w-full px-2 py-1.5 text-sm border rounded">
+                      <option value="" disabled>-- Choisir une équipe --</option>
                       <option v-for="team in teams" :key="team.id" :value="team.id">
                         {{ team.company }} ({{ team.players[0]?.last_name }})
                       </option>

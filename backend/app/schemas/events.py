@@ -5,7 +5,7 @@
 from pydantic import BaseModel, field_validator, model_validator
 from datetime import date
 from typing import List, Optional
-from backend.app.schemas.team import TeamResponse  # ✅ Import nécessaire pour afficher les équipes
+from app.schemas.team import TeamResponse  # ✅ Import nécessaire pour afficher les équipes
 
 # --- SCHEMAS MATCH ---
 class MatchBase(BaseModel):

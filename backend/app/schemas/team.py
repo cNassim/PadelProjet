@@ -12,7 +12,7 @@ class PlayerShort(BaseModel):
     last_name: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class PoolShort(BaseModel):
@@ -20,7 +20,7 @@ class PoolShort(BaseModel):
     name: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # --- Lecture d'une équipe ---
@@ -31,7 +31,7 @@ class TeamResponse(BaseModel):
     pool: Optional[PoolShort]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # --- Création / modification d'une équipe ---
