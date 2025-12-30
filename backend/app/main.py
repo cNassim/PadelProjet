@@ -48,6 +48,7 @@ app.include_router(profile.router, prefix="/api/v1/profile", tags=["Profile"])
 app.include_router(events.router, prefix="/api/v1/events", tags=["Events & Matches"])
 app.include_router(matches.router, prefix="/api/v1/matches", tags=["Matches"])
 # 4. Pools et Teams (✅ On garde leur activation de teams/pools)
+app.include_router(players.router)
 app.include_router(pools.router, prefix="/api/v1/pools", tags=["Pools"])
 app.include_router(teams.router, prefix="/api/v1/teams", tags=["Teams"])
 

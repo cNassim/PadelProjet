@@ -55,6 +55,28 @@ const routes = [
   },
 ]
 
+// Routes Team (admin uniquement)
+routes.push(
+  {
+    path: '/teams',
+    name: 'teams',
+    component: TeamList,
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/teams/new',
+    name: 'team-new',
+    component: TeamForm,
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/teams/:id/edit',
+    name: 'team-edit',
+    component: TeamForm,
+    meta: { requiresAuth: true, requiresAdmin: true }
+  }
+)
+
 const router = createRouter({
   history: createWebHistory(),
   routes
