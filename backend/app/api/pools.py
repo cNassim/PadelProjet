@@ -7,7 +7,7 @@ from app.database import get_db
 from app.models.models import Team, Pool, Match
 from app.schemas.pools import PoolCreate, PoolResponse
 
-router = APIRouter(prefix="/pools", tags=["Pools"])
+router = APIRouter(tags=["Pools"])
 
 #Liste toutes les poules - GET {/pools}
 @router.get("/", response_model=dict)

@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
-from app.api import auth, teams, pools, admin, profile, events, matches, results
+from app.api import auth, teams, pools, admin, profile, events, matches, results, players
 from app.database import engine
 from app.models import models
 from pathlib import Path
