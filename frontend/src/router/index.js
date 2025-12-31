@@ -11,6 +11,7 @@ import ProfilePage from '../views/ProfilePage.vue'
 import MatchesPage from '../views/MatchesPage.vue'
 import ResultsPage from '../views/ResultsPage.vue'
 import PlanningPage from '../views/PlanningPage.vue'
+import TeamManagement from '../views/TeamManagement.vue'
 
 const routes = [
   {
@@ -36,12 +37,12 @@ const routes = [
     name: 'profile',
     component: ProfilePage,
     meta: { requiresAuth: true }
-  },{
+  }, {
     path: '/matches',
     name: 'matches',
     component: MatchesPage,
     meta: { requiresAuth: true }
-  },{
+  }, {
     path: '/results',
     name: 'results',
     component: ResultsPage,
@@ -53,29 +54,13 @@ const routes = [
     component: PlanningPage,
     meta: { requiresAuth: true }
   },
-]
-
-// Routes Team (admin uniquement)
-routes.push(
   {
     path: '/teams',
     name: 'teams',
-    component: TeamList,
-    meta: { requiresAuth: true, requiresAdmin: true }
-  },
-  {
-    path: '/teams/new',
-    name: 'team-new',
-    component: TeamForm,
-    meta: { requiresAuth: true, requiresAdmin: true }
-  },
-  {
-    path: '/teams/:id/edit',
-    name: 'team-edit',
-    component: TeamForm,
+    component: TeamManagement,
     meta: { requiresAuth: true, requiresAdmin: true }
   }
-)
+]
 
 const router = createRouter({
   history: createWebHistory(),
@@ -85,7 +70,7 @@ const router = createRouter({
 // Navigation guard pour protéger les routes
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
-  
+
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next('/login')
   } else if (to.meta.requiresAdmin && !authStore.isAdmin) {
