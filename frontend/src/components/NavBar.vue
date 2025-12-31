@@ -3,9 +3,9 @@
 // ============================================
 
 <template>
-  <nav class="bg-blue-600 text-white shadow-lg">
-    <div class="container mx-auto px-4">
-      <div class="flex justify-between items-center h-16">
+  <nav class="text-white bg-blue-600 shadow-lg">
+    <div class="container px-4 mx-auto">
+      <div class="flex items-center justify-between h-16">
         <!-- Logo et titre -->
         <div class="flex items-center space-x-4">
           <router-link to="/" class="text-xl font-bold hover:text-blue-200">
@@ -14,7 +14,7 @@
         </div>
 
         <!-- Menu principal -->
-        <div class="hidden md:flex space-x-4">
+        <div class="hidden space-x-4 md:flex">
           <router-link to="/" class="px-3 py-2 rounded hover:bg-blue-700">
             Accueil
           </router-link>
@@ -29,6 +29,13 @@
           </router-link>
           <router-link 
             v-if="authStore.isAdmin" 
+            to="/teams" 
+            class="px-3 py-2 rounded hover:bg-blue-700"
+          >
+            Équipes
+          </router-link>
+          <router-link 
+            v-if="authStore.isAdmin" 
             to="/admin" 
             class="px-3 py-2 rounded hover:bg-blue-700"
           >
@@ -37,16 +44,22 @@
         </div>
 
         <!-- Menu utilisateur -->
-        <div class="flex items-center space-x-4">
-          <router-link to="/profile" class="px-3 py-2 rounded hover:bg-blue-700">
-            👤 {{ authStore.user?.email }}
+        <div v-if="authStore.isAuthenticated" class="flex items-center space-x-4">
+          <router-link to="/profile" class="flex items-center gap-2 px-3 py-2 rounded hover:bg-blue-700">
+            <span>👤</span>
+            <span class="hidden lg:inline">{{ authStore.user?.email }}</span>
           </router-link>
           <button 
             @click="handleLogout" 
-            class="px-4 py-2 bg-red-500 rounded hover:bg-red-600"
+            class="px-4 py-2 text-sm font-medium bg-red-500 rounded hover:bg-red-600"
           >
             Déconnexion
           </button>
+        </div>
+        <div v-else class="flex items-center space-x-4">
+          <router-link to="/login" class="px-4 py-2 font-medium text-blue-600 bg-white rounded hover:bg-blue-50">
+            Connexion
+          </router-link>
         </div>
       </div>
     </div>

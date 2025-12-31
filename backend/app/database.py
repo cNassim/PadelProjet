@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker
 from app.core.config import settings
 
 engine = create_engine(
-    settings.database_url,  # ← Changé de DATABASE_URL à database_url
+    settings.database_url,
     connect_args={"check_same_thread": False}  # Nécessaire pour SQLite
 )
 
@@ -21,15 +21,15 @@ def get_db():
         db.close()
 
 def init_db():
-    """Initialise la base de données avec un admin par défaut"""
-    from app.models.models import User, Base
+    """Initialise la base de données avec un admin et un utilisateur par défaut"""
+    from app.models.models import User
     from app.core.security import get_password_hash
     
     Base.metadata.create_all(bind=engine)
     
     db = SessionLocal()
     try:
-        # Vérifier si un admin existe déjà
+        # ✅ FIX 1: Vérifier si un admin existe déjà
         admin = db.query(User).filter(User.email == "admin@padel.com").first()
         if not admin:
             admin = User(
@@ -43,5 +43,21 @@ def init_db():
             print("✅ Admin créé : admin@padel.com / Admin@2025!")
         else:
             print("ℹ️  Admin existe déjà")
+        
+        # ✅ FIX 2: Vérifier si l'utilisateur de test existe déjà
+        # NE PAS réutiliser la variable "User" (qui est la classe)
+        user = db.query(User).filter(User.email == "pierre.dubois@datalab.com").first()
+        if not user:
+            user = User(
+                email="pierre.dubois@datalab.com",
+                password_hash=get_password_hash('I!H9"5"l}4R)m<^h'),  # ✅ FIX 3: Échapper les guillemets
+                role="JOUEUR",
+                is_active=True
+            )
+            db.add(user)
+            db.commit()
+            print('✅ Utilisateur créé : pierre.dubois@datalab.com / I!H9"5"l}4R)m<^h')
+        else:
+            print("ℹ️  Utilisateur existe déjà")
     finally:
         db.close()
