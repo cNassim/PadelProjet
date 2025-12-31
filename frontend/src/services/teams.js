@@ -4,28 +4,46 @@
 
 import api from './api'
 
-export default {
+export const teamAPI = {
   /**
    * Récupérer la liste des équipes
    * @param {Object} params - { pool_id, company }
    */
-  async getTeams(params = {}) {
+  async list(params = {}) {
     const response = await api.get('/teams', { params })
     return response.data
   },
 
-  // Ces méthodes serviront plus tard pour la gestion des équipes
-  async createTeam(data) {
+  /**
+   * Récupérer une équipe par ID
+   */
+  async get(id) {
+    const response = await api.get(`/teams/${id}`)
+    return response.data
+  },
+
+  /**
+   * Créer une équipe
+   */
+  async create(data) {
     const response = await api.post('/teams', data)
     return response.data
   },
 
-  async updateTeam(id, data) {
+  /**
+   * Mettre à jour une équipe
+   */
+  async update(id, data) {
     const response = await api.put(`/teams/${id}`, data)
     return response.data
   },
 
-  async deleteTeam(id) {
+  /**
+   * Supprimer une équipe
+   */
+  async remove(id) {
     await api.delete(`/teams/${id}`)
   }
 }
+
+export default teamAPI
