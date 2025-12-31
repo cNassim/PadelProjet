@@ -19,8 +19,20 @@ def list_pools(db: Session = Depends(get_db)):
             {
             "id": p.id,
             "name": p.name,
-            "teams_count": len(p.teams_count),
-            "teams": [{"id": t.id, "name": t.name} for t in p.teams],
+            "teams_count": len(p.teams),
+            # ✅ CORRECTION MAJEURE ICI :
+            # 1. On utilise t.company au lieu de t.name
+            # 2. On ajoute la liste des players car le Frontend en a besoin pour l'affichage
+            "teams": [
+                {
+                    "id": t.id, 
+                    "company": t.company, 
+                    "players": [
+                        {"id": pl.id, "first_name": pl.first_name, "last_name": pl.last_name} 
+                        for pl in t.players
+                    ]
+                } for t in p.teams
+            ], 
             }
             for p in pools
         ]
@@ -59,10 +71,15 @@ def createPool(pool_data:PoolCreate, db: Session= Depends(get_db), _: dict = Dep
         "id": newPool.id,
         "name": newPool.name,
         "teams_count": len(newPool.teams),
-        "players": [
-                    {"id": t.player1.id, "first_name": t.player1.first_name, "last_name": t.player1.last_name},
-                    {"id": t.player2.id, "first_name": t.player2.first_name, "last_name": t.player2.last_name},
-                ],
+        "teams": [
+            {
+                "id": t.id,
+                "company": t.company,
+                "players": [
+                    {"id": p.id, "first_name": p.first_name, "last_name": p.last_name} for p in t.players
+                ]
+            } for t in newPool.teams
+        ]
     }
 
 
@@ -120,8 +137,7 @@ def update_pool(pool_id: int, pool_data: PoolCreate, db: Session = Depends(get_d
                 "id": t.id,
                 "company": t.company,
                 "players": [
-                    {"id": t.player1.id, "first_name": t.player1.first_name, "last_name": t.player1.last_name},
-                    {"id": t.player2.id, "first_name": t.player2.first_name, "last_name": t.player2.last_name},
+                    {"id": p.id, "first_name": p.first_name, "last_name": p.last_name} for p in t.players
                 ],
             }
             for t in pool.teams
@@ -152,4 +168,3 @@ def delete_pool(pool_id: int, db: Session = Depends(get_db), _: dict = Depends(g
     db.commit()
 
     return {"detail": "Pool supprimé avec succès."}
-
