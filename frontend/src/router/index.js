@@ -6,6 +6,12 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import HomePage from '../views/HomePage.vue'
 import LoginPage from '../views/LoginPage.vue'
+import AdminPage from '../views/AdminPage.vue'
+import ProfilePage from '../views/ProfilePage.vue'
+import MatchesPage from '../views/MatchesPage.vue'
+import ResultsPage from '../views/ResultsPage.vue'
+import PlanningPage from '../views/PlanningPage.vue'
+import TeamManagement from '../views/TeamManagement.vue'
 
 const routes = [
   {
@@ -19,8 +25,41 @@ const routes = [
     name: 'login',
     component: LoginPage,
     meta: { requiresAuth: false }
+  },
+  {
+    path: '/admin',
+    name: 'admin',
+    component: AdminPage,
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/profile',
+    name: 'profile',
+    component: ProfilePage,
+    meta: { requiresAuth: true }
+  }, {
+    path: '/matches',
+    name: 'matches',
+    component: MatchesPage,
+    meta: { requiresAuth: true }
+  }, {
+    path: '/results',
+    name: 'results',
+    component: ResultsPage,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/planning',
+    name: 'planning',
+    component: PlanningPage,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/teams',
+    name: 'teams',
+    component: TeamManagement,
+    meta: { requiresAuth: true, requiresAdmin: true }
   }
-  // TODO: Ajouter les autres routes (Planning, Matchs, Résultats, Admin, Profil)
 ]
 
 const router = createRouter({
@@ -31,9 +70,11 @@ const router = createRouter({
 // Navigation guard pour protéger les routes
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
-  
+
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next('/login')
+  } else if (to.meta.requiresAdmin && !authStore.isAdmin) {
+    next('/')
   } else if (to.path === '/login' && authStore.isAuthenticated) {
     next('/')
   } else {
