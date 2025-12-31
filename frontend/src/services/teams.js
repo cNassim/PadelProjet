@@ -1,25 +1,49 @@
+// ============================================
+// FICHIER : frontend/src/services/teams.js
+// ============================================
+
 import api from './api'
 
-const teamService = {
-  // Récupérer les équipes
-  getTeams() {
-    return api.get('/teams').then(response => response.data)
+export const teamAPI = {
+  /**
+   * Récupérer la liste des équipes
+   * @param {Object} params - { pool_id, company }
+   */
+  async list(params = {}) {
+    const response = await api.get('/teams', { params })
+    return response.data
   },
 
-  // --- Méthodes compatibles TeamManagement ---
-  list() {
-    return this.getTeams()
+  /**
+   * Récupérer une équipe par ID
+   */
+  async get(id) {
+    const response = await api.get(`/teams/${id}`)
+    return response.data
   },
-  create(data) {
-    return api.post('/teams', data).then(response => response.data)
+
+  /**
+   * Créer une équipe
+   */
+  async create(data) {
+    const response = await api.post('/teams', data)
+    return response.data
   },
-  update(id, data) {
-    return api.put(`/teams/${id}`, data).then(response => response.data)
+
+  /**
+   * Mettre à jour une équipe
+   */
+  async update(id, data) {
+    const response = await api.put(`/teams/${id}`, data)
+    return response.data
   },
-  remove(id) {
-    return api.delete(`/teams/${id}`)
+
+  /**
+   * Supprimer une équipe
+   */
+  async remove(id) {
+    await api.delete(`/teams/${id}`)
   }
 }
 
-export const teamAPI = teamService
-export default teamService
+export default teamAPI
