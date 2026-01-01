@@ -65,6 +65,17 @@
         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Date de naissance</label>
         <input v-model="newPlayer.birth_date" type="date" required class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
       </div>
+      <div v-if="errorMessages && errorMessages.length > 0" class="p-4 bg-red-50 border-l-4 border-red-500 rounded-r-xl animate-shake">
+  <div class="flex items-center mb-1">
+    <span class="text-red-600 font-bold mr-2 text-xs">⚠️</span>
+    <span class="text-[10px] font-bold text-red-800 uppercase tracking-widest">Erreur de validation</span>
+  </div>
+  <ul class="list-disc list-inside">
+    <li v-for="(msg, index) in errorMessages" :key="index" class="text-xs text-red-700 font-medium">
+      {{ msg }}
+    </li>
+  </ul>
+</div>
 
       <div class="flex gap-3 mt-8">
         <button type="button" @click="closeModal" class="flex-1 py-3 bg-gray-100 text-gray-600 rounded-xl font-bold hover:bg-gray-200 transition-all text-sm">
@@ -209,6 +220,7 @@ const openEditModal = (player) => {
 // --- FERMETURE ---
 const closeModal = () => {
   showModal.value = false
+  errorMessages.value = [];
   errorMessage.value = null
   isEditing.value = false
 }
@@ -270,16 +282,35 @@ const handleDeletePlayer = async (player) => {
 }
   */
 
-// Extraire les messages d'erreur du back 
+const errorMessages = ref([]) // On passe à un tableau 
+
 const handleError = (err) => {
-  console.error(err)
+  errorMessages.value = [] // On vide les erreurs précédentes
+  
   if (err.response?.data?.detail) {
-    const detail = err.response.data.detail
-    errorMessage.value = Array.isArray(detail) 
-      ? detail.map(e => `${e.loc[1]}: ${e.msg}`).join(' | ') 
-      : detail
+    const details = err.response.data.detail
+    
+    if (Array.isArray(details)) {
+      // On extrait chaque message (soit votre ValueError, soit le message Pydantic par défaut)
+      errorMessages.value = details.map(e => {
+        //traduction pour user
+        const fieldMap = {
+          first_name: 'Prénom',
+          last_name: 'Nom',
+          company: 'Entreprise',
+          license_number: 'Licence',
+          birth_date: 'Date de naissance'
+        }
+        let msg = e.msg;
+        if (msg.includes("at least 2 characters")) msg = "doit contenir au moins 2 caractères.";
+        const fieldName = fieldMap[e.loc[1]] || e.loc[1]
+        return `${fieldName} : ${msg}`
+      })
+    } else {
+      errorMessages.value = [details]
+    }
   } else {
-    errorMessage.value = "Une erreur est survenue."
+    errorMessages.value = ["Une erreur inattendue est survenue."]
   }
 }
 </script>
