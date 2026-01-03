@@ -1,7 +1,3 @@
-// ============================================
-// FICHIER : frontend/src/views/PlanningPage.vue
-// ============================================
-
 <template>
   <div class="min-h-screen px-4 py-8 bg-gray-50">
     <div class="max-w-6xl mx-auto">
@@ -108,7 +104,9 @@
                 <div v-for="match in event.matches" :key="match.id" class="p-3 text-sm rounded-lg bg-gray-50">
                   <div class="flex justify-between mb-1 text-xs text-gray-500">
                     <span>🎾 Piste {{ match.court_number }}</span>
-                    <span :class="getStatusColor(match.status)">{{ formatStatus(match.status) }}</span>
+                    <span :class="getStatusColor(match.status)">
+                        {{ formatStatus(match.status) }}
+                    </span>
                   </div>
                   <div class="font-medium text-gray-800">
                     {{ match.team1?.company || 'Equipe 1' }} <span class="text-gray-400">vs</span> {{ match.team2?.company || 'Equipe 2' }}
@@ -280,8 +278,9 @@ const loadData = async () => {
 
     // Charger équipes (Admin uniquement)
     if (authStore.isAdmin && teams.value.length === 0) {
-      const teamRes = await teamService.getTeams()
-      teams.value = teamRes.teams
+      // ✅ Compatibilité .list()
+      const teamRes = await teamService.list() 
+      teams.value = Array.isArray(teamRes) ? teamRes : (teamRes.teams || teamRes.data || [])
     }
   } catch (err) {
     console.error("Erreur chargement:", err)
@@ -313,11 +312,10 @@ const openEditModal = (event) => {
   editingId.value = event.id
   eventForm.event_date = event.event_date
   eventForm.event_time = event.event_time
-  // En édition, on ne touche pas aux matchs ici (géré dans Matchs)
   eventForm.matches = [] 
   formError.value = null
   showModal.value = true
-  selectedDay.value = null // Fermer le détail
+  selectedDay.value = null 
 }
 
 const addMatchSlot = () => {
@@ -330,19 +328,56 @@ const removeMatchSlot = (index) => {
   eventForm.matches.splice(index, 1)
 }
 
+// ✅ SÉCURITÉ : On garde les validations anti-doublons !
 const handleSubmit = async () => {
   submitting.value = true
   formError.value = null
+
+  // 1. Validation : Equipes complètes et différentes
+  for (const m of eventForm.matches) {
+    if (!m.team1_id || !m.team2_id) {
+       formError.value = "Veuillez sélectionner deux équipes pour chaque match."
+       submitting.value = false
+       return
+    }
+    if (m.team1_id === m.team2_id) {
+       formError.value = "Une équipe ne peut pas jouer contre elle-même."
+       submitting.value = false
+       return
+    }
+  }
+
+  // 2. Validation : Doublons de Pistes
+  const courts = eventForm.matches.map(m => m.court_number)
+  const uniqueCourts = new Set(courts)
+  if (courts.length !== uniqueCourts.size) {
+    formError.value = "Erreur : Vous avez sélectionné la même piste pour plusieurs matchs."
+    submitting.value = false
+    return
+  }
+
+  // 3. Validation : Doublons d'Equipes
+  const teamsInForm = []
+  eventForm.matches.forEach(m => {
+    teamsInForm.push(m.team1_id)
+    teamsInForm.push(m.team2_id)
+  })
+  const uniqueTeams = new Set(teamsInForm)
+  if (teamsInForm.length !== uniqueTeams.size) {
+    formError.value = "Erreur : Une équipe ne peut pas jouer deux matchs lors du même événement."
+    submitting.value = false
+    return
+  }
+
+  // Envoi API
   try {
     if (isEditing.value) {
-      // MODE MODIFICATION
       await eventService.updateEvent(editingId.value, {
         event_date: eventForm.event_date,
         event_time: eventForm.event_time
       })
       alert("✅ Événement modifié !")
     } else {
-      // MODE CRÉATION
       await eventService.createEvent(eventForm)
       alert("✅ Événement créé !")
     }
@@ -372,8 +407,6 @@ const deleteEvent = async (id) => {
 // --- HELPERS ---
 const isToday = (d) => d === todayStr
 const formatDateFull = (d) => new Date(d).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
-const formatStatus = (s) => ({ 'A_VENIR': 'À venir', 'TERMINE': 'Terminé', 'ANNULE': 'Annulé' }[s] || s)
-const getStatusColor = (s) => ({ 'A_VENIR': 'text-blue-600', 'TERMINE': 'text-green-600', 'ANNULE': 'text-red-600' }[s] || 'text-gray-600')
 
 const filterEvents = (dayEvents) => {
   if (authStore.isAdmin || showAllEvents.value) return dayEvents
@@ -388,6 +421,10 @@ const filterEvents = (dayEvents) => {
 const openDayDetails = (day) => {
   selectedDay.value = day
 }
+
+// ✅ STANDARD : On a retiré isPast(), formatStatus ne regarde plus la date
+const formatStatus = (s) => ({ 'A_VENIR': 'À venir', 'TERMINE': 'Terminé', 'ANNULE': 'Annulé' }[s] || s)
+const getStatusColor = (s) => ({ 'A_VENIR': 'text-blue-600', 'TERMINE': 'text-green-600', 'ANNULE': 'text-red-600' }[s] || 'text-gray-600')
 
 onMounted(() => {
   loadData()
