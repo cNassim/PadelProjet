@@ -29,9 +29,9 @@ def get_all_players(db: Session = Depends(get_db), current_admin: User = Depends
             first_name=player.first_name,
             last_name=player.last_name,
             company=player.company,
+            birth_date=player.birth_date, 
             license_number=player.license_number,
             email= None,
-            birth_date=player.birth_date, 
             photo_url=player.photo_url,
             has_account=player.user_id is not None
         )
@@ -53,9 +53,10 @@ def get_player(player_id: int, db: Session = Depends(get_db)):
             first_name=player.first_name,
             last_name=player.last_name,
             company=player.company,
+            birth_date=player.birth_date,
             license_number=player.license_number,
             email= None,
-            birth_date=player.birth_date, 
+ 
             photo_url=player.photo_url,
             has_account=player.user_id is not None
         )
