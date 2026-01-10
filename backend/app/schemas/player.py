@@ -27,6 +27,11 @@ class PlayerCreate(BaseModel):
         if not re.match(r"^L\d{6}$", v):
             raise ValueError("Le numéro de licence doit commencer par 'L' suivi de 6 chiffres (ex: L123456).")
         return v
+    @validator("birth_date")
+    def check_birth_date(cls, v): 
+        if v > date.today():
+            raise ValueError("La date de naissance ne peut pas être dans le futur")
+        return v
 
 class PlayerUpdate(BaseModel):
 # même validation que PlayerCreate
