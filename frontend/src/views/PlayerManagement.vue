@@ -169,12 +169,19 @@ const filteredPlayers = computed(() => {
 })
 
 const deletePlayer = async (id) => {
-  if (confirm("Supprimer ce joueur ?")) {
+  if (confirm("Attention, cette action est irréversible. Voulez-vous vraiment supprimer ce joueur ?")) {
     try {
       await playerAPI.delete(id)
       await fetchAllPlayers() 
     } catch (err) {
-      alert("Erreur lors de la suppression")
+      //alert("Erreur lors de la suppression")
+      const errorMessage = err.response?.data?.detail 
+                        || "Une erreur inconnue est survenue";
+
+      //Msg du back
+      alert(errorMessage);
+      
+      console.error("Détails de l'erreur:", err.response?.data);
     }
   }
 }
