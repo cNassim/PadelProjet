@@ -31,7 +31,7 @@ def get_all_players(db: Session = Depends(get_db), current_admin: User = Depends
             company=player.company,
             birth_date=player.birth_date, 
             license_number=player.license_number,
-            email= None,
+            #email= None,
             photo_url=player.photo_url,
             has_account=player.user_id is not None
         )
@@ -55,7 +55,7 @@ def get_player(player_id: int, db: Session = Depends(get_db)):
             company=player.company,
             birth_date=player.birth_date,
             license_number=player.license_number,
-            email= None,
+            #email= None,
  
             photo_url=player.photo_url,
             has_account=player.user_id is not None
@@ -73,7 +73,7 @@ def update_player(player_id: int, payload: PlayerUpdate, db: Session = Depends(g
         license_number=updated.license_number,
         birth_date=updated.birth_date,
         photo_url=updated.photo_url,
-        email=None,
+        #email=None,
         #email=updated.user.email if updated.user_id else None,
         has_account=updated.user_id is not None
     )

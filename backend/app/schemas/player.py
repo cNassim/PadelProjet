@@ -9,8 +9,8 @@ class PlayerCreate(BaseModel):
     last_name: str =Field(...,min_length = 2, max_length = 50)
     company: str = Field(..., min_length=2, max_length = 100)
     license_number: str = Field(...)  
-    email : EmailStr  | None #facultatif
-    birth_date: date | None
+    #email : EmailStr  | None #facultatif
+    birth_date: date 
     photo_url: str | None
 #	2-50 caractères, lettres et espaces uniquement
 #   2-50 caractères, lettres et espaces uniquement
@@ -55,9 +55,9 @@ class PlayerResponse(BaseModel):
     last_name: str
     company: str
     license_number: str 
-    birth_date: date | None = None   # ⬅⬅⬅ IMPORTANT  # ⬅⬅⬅ OBLIGATOIRE
+    birth_date: date   
     photo_url: str | None = None
-    email: str | None
+    #email: str | None
     has_account: bool
     model_config = {'from_attributes': True}
 
