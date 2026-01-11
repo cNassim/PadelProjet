@@ -1,6 +1,10 @@
+# ============================================
+# FICHIER : backend/app/api/events.py
+# ============================================
+
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import extract
+from sqlalchemy import extract, cast, String, func  # ✅ IMPORT String AJOUTÉ
 from typing import Optional
 from datetime import date
 
@@ -20,8 +24,6 @@ def read_events(
     db: Session = Depends(get_db),
     current_user: User = Depends(deps.get_current_user)
 ):
-    # FIX: We cannot join on 'Team.players' because it is a property, not a relationship.
-    # We must explicitly join 'player1' and 'player2'.
     query = db.query(Event).options(
         joinedload(Event.matches).joinedload(Match.team1).joinedload(Team.player1),
         joinedload(Event.matches).joinedload(Match.team1).joinedload(Team.player2),
@@ -40,46 +42,108 @@ def read_events(
             extract('month', Event.event_date) == int(month_str)
         )
 
-    # Sort by date and then time
     events = query.order_by(Event.event_date.asc(), Event.event_time.asc()).all()
     return {"events": events}
 
-# POST /events (ADMIN ONLY)
+# POST /events (ADMIN ONLY) - ✅ SÉCURITÉ RENFORCÉE (FIX SQLITE)
 @router.post("/", response_model=EventResponse, status_code=status.HTTP_201_CREATED)
 def create_event(
     event_in: EventCreate, 
     db: Session = Depends(get_db),
     current_user: User = Depends(deps.get_current_admin)
 ):
-    # 1. Create Event
+    print(f"\n🚀 DÉBUT CRÉATION : {event_in.event_date} à {event_in.event_time}")
+
+    # --- 1. VALIDATION INTERNE ---
+    requested_courts = [m.court_number for m in event_in.matches]
+    if len(requested_courts) != len(set(requested_courts)):
+        raise HTTPException(status_code=400, detail="Doublon de piste dans votre demande.")
+
+    requested_teams = []
+    for m in event_in.matches:
+        if m.team1_id == m.team2_id:
+            raise HTTPException(status_code=400, detail="Une équipe ne peut pas jouer contre elle-même.")
+        requested_teams.append(m.team1_id)
+        requested_teams.append(m.team2_id)
+    
+    if len(requested_teams) != len(set(requested_teams)):
+        raise HTTPException(status_code=400, detail="Une équipe est présente plusieurs fois dans votre demande.")
+
+    # --- 2. VALIDATION EXTERNE (Vérification Inter-Événements) ---
+    
+    # ✅ FIX CRITIQUE : Conversion explicite en String pour la comparaison
+    # Cela permet de matcher "2026-01-06" avec "2026-01-06 00:00:00"
+    date_str = str(event_in.event_date)
+    
+    day_events = db.query(Event).filter(
+        cast(Event.event_date, String).like(f"{date_str}%")
+    ).all()
+    
+    print(f"📅 Analyse de {len(day_events)} événements existants pour la date {date_str}...")
+
+    # On normalise l'heure demandée (HH:MM)
+    new_time = event_in.event_time[:5] 
+
+    for existing_event in day_events:
+        # On normalise l'heure existante
+        existing_time = existing_event.event_time[:5]
+
+        # Si ce n'est pas la même heure, pas de conflit direct
+        if existing_time != new_time:
+            continue
+
+        print(f"⚠️ Analyse conflit avec événement ID {existing_event.id} à {existing_time}")
+
+        # On vérifie les matchs de cet événement existant
+        for match in existing_event.matches:
+            if match.status == "ANNULE":
+                continue 
+
+            # TEST A : PISTE DÉJÀ PRISE ?
+            if match.court_number in requested_courts:
+                print(f"❌ BLOCAGE : Piste {match.court_number} déjà prise.")
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"CONFLIT : La piste {match.court_number} est déjà réservée à {existing_time}."
+                )
+
+            # TEST B : ÉQUIPE DÉJÀ PRISE ?
+            if match.team1_id in requested_teams or match.team2_id in requested_teams:
+                # Récupération de l'ID qui pose problème pour le log
+                team_conflict = match.team1_id if match.team1_id in requested_teams else match.team2_id
+                print(f"❌ BLOCAGE : Équipe ID {team_conflict} joue déjà.")
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"CONFLIT : L'équipe ID {team_conflict} joue déjà un autre match à {existing_time}."
+                )
+
+    print("✅ Aucun conflit détecté.")
+
+    # --- 3. CRÉATION ---
     db_event = Event(event_date=event_in.event_date, event_time=event_in.event_time)
     db.add(db_event)
     db.commit()
     db.refresh(db_event)
 
-    # 2. Create Matches
-    if event_in.matches:
-        for match_data in event_in.matches:
-            # Verify teams exist
-            t1 = db.query(Team).filter(Team.id == match_data.team1_id).first()
-            t2 = db.query(Team).filter(Team.id == match_data.team2_id).first()
-            
-            if not t1 or not t2:
-                db.delete(db_event)
-                db.commit()
-                raise HTTPException(status_code=404, detail="Équipe introuvable")
+    for match_data in event_in.matches:
+        t1 = db.query(Team).filter(Team.id == match_data.team1_id).first()
+        t2 = db.query(Team).filter(Team.id == match_data.team2_id).first()
+        
+        if not t1 or not t2:
+            db.delete(db_event)
+            db.commit()
+            raise HTTPException(status_code=404, detail="Équipe introuvable.")
 
-            db_match = Match(
-                event_id=db_event.id,
-                team1_id=match_data.team1_id,
-                team2_id=match_data.team2_id,
-                court_number=match_data.court_number,
-                status="A_VENIR"
-            )
-            db.add(db_match)
+        db_match = Match(
+            event_id=db_event.id,
+            team1_id=match_data.team1_id,
+            team2_id=match_data.team2_id,
+            court_number=match_data.court_number,
+            status="A_VENIR"
+        )
+        db.add(db_match)
     
     db.commit()
-    # Refresh with relationships to ensure response model works
     db.refresh(db_event)
     return db_event
 
@@ -95,6 +159,7 @@ def update_event(
     if not event:
         raise HTTPException(status_code=404, detail="Événement non trouvé")
 
+    # TODO: Ajouter ici aussi la vérification de conflit si on change la date/heure
     if event_in.event_date:
         event.event_date = event_in.event_date
     if event_in.event_time:

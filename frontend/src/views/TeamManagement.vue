@@ -61,13 +61,13 @@
                 <td class="px-6 py-4">
                   <div class="flex flex-wrap gap-1">
                     <span
-                      v-for="playerId in (team.player_ids || [])"
-                      :key="playerId"
+                      v-for="player in (team.players || [])"
+                      :key="player.id"
                       class="px-2 py-1 text-xs rounded-full bg-blue-50 text-blue-700 border border-blue-100"
                     >
-                      {{ getPlayerName(playerId) }}
+                      {{ player.first_name }} {{ player.last_name }}
                     </span>
-                    <span v-if="(team.player_ids || []).length === 0" class="text-gray-400 text-sm">
+                    <span v-if="(team.players || []).length === 0" class="text-gray-400 text-sm">
                       Aucun joueur
                     </span>
                   </div>
@@ -288,7 +288,8 @@ const openEditModal = (team) => {
   form.value = {
     company: team.company || '',
     pool_id: team.pool_id || null,
-    player_ids: team.player_ids || []
+    // Extraire les IDs des joueurs depuis le tableau d'objets players
+    player_ids: (team.players || []).map(p => p.id)
   }
   error.value = null
   showModal.value = true
@@ -305,10 +306,25 @@ const saveTeam = async () => {
   error.value = null
 
   try {
+    // Validation : exactement 2 joueurs requis
+    if (!form.value.player_ids || form.value.player_ids.length !== 2) {
+      error.value = 'Vous devez sélectionner exactement 2 joueurs pour former une équipe'
+      saving.value = false
+      return
+    }
+
+    // Transformer player_ids en player1_id et player2_id pour le backend
+    const teamData = {
+      company: form.value.company,
+      pool_id: form.value.pool_id,
+      player1_id: form.value.player_ids[0],
+      player2_id: form.value.player_ids[1]
+    }
+
     if (editingTeam.value) {
-      await teamAPI.update(editingTeam.value.id, form.value)
+      await teamAPI.update(editingTeam.value.id, teamData)
     } else {
-      await teamAPI.create(form.value)
+      await teamAPI.create(teamData)
     }
     await loadTeams()
     closeModal()
