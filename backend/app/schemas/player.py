@@ -9,8 +9,8 @@ class PlayerCreate(BaseModel):
     last_name: str =Field(...,min_length = 2, max_length = 50)
     company: str = Field(..., min_length=2, max_length = 100)
     license_number: str = Field(...)  
-    email : EmailStr  | None #facultatif
-    birth_date: date | None
+    #email : EmailStr  | None #facultatif
+    birth_date: date 
     photo_url: str | None
 #	2-50 caractères, lettres et espaces uniquement
 #   2-50 caractères, lettres et espaces uniquement
@@ -26,6 +26,11 @@ class PlayerCreate(BaseModel):
     def validate_license_number(cls, v):
         if not re.match(r"^L\d{6}$", v):
             raise ValueError("Le numéro de licence doit commencer par 'L' suivi de 6 chiffres (ex: L123456).")
+        return v
+    @validator("birth_date")
+    def check_birth_date(cls, v): 
+        if v > date.today():
+            raise ValueError("La date de naissance ne peut pas être dans le futur")
         return v
 
 class PlayerUpdate(BaseModel):
@@ -55,9 +60,9 @@ class PlayerResponse(BaseModel):
     last_name: str
     company: str
     license_number: str 
-    birth_date: date | None = None   # ⬅⬅⬅ IMPORTANT  # ⬅⬅⬅ OBLIGATOIRE
+    birth_date: date   
     photo_url: str | None = None
-    email: str | None
+    #email: str | None
     has_account: bool
     model_config = {'from_attributes': True}
 
