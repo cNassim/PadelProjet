@@ -20,10 +20,7 @@ def list_pools(db: Session = Depends(get_db)):
             "id": p.id,
             "name": p.name,
             "teams_count": len(p.teams),
-            # ✅ CORRECTION MAJEURE ICI :
-            # 1. On utilise t.company au lieu de t.name
-            # 2. On ajoute la liste des players car le Frontend en a besoin pour l'affichage
-            "teams": [
+           "teams": [
                 {
                     "id": t.id, 
                     "company": t.company, 
