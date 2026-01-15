@@ -62,9 +62,17 @@
       </div>
 
       <div>
-        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Date de naissance</label>
-        <input v-model="newPlayer.birth_date" type="date" required class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Photo URL</label>
+        <input v-model="newPlayer.photo_url" type="text"  class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
       </div>
+
+
+      <div>
+        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Date de naissance</label>
+        <input v-model="newPlayer.birth_date" type="date":max="today" required class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+      </div>
+
+
       <div v-if="errorMessages && errorMessages.length > 0" class="p-4 bg-red-50 border-l-4 border-red-500 rounded-r-xl animate-shake">
   <div class="flex items-center mb-1">
     <span class="text-red-600 font-bold mr-2 text-xs">⚠️</span>
@@ -143,6 +151,8 @@ const showModal = ref(false)
 const isEditing = ref(false)
 const errorMessage = ref(null)
 const createLoading = ref(false)
+
+const today = new Date().toISOString().split('T')[0];
 
 // Récupération des données depuis la bd
 const fetchAllPlayers = async () => {
@@ -308,7 +318,7 @@ const handleError = (err) => {
           license_number: 'Licence',
           birth_date: 'Date de naissance'
         }
-        let msg = e.msg;
+        let msg = e.msg.replace('Value error, ', '');
         if (msg.includes("at least 2 characters")) msg = "doit contenir au moins 2 caractères.";
         const fieldName = fieldMap[e.loc[1]] || e.loc[1]
         return `${fieldName} : ${msg}`
