@@ -3,9 +3,8 @@
 
 from sqlalchemy.orm import Session, joinedload
 from app.models.models import Pool , Team , Match
-from app.api.deps import get_current_admin
 from app.schemas.pools import PoolCreate
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, HTTPException, status
 
 # les commentaires : ADMIN uniquement pour expliquer la logique sinon c'est géré dans le controller.
 class PoolService:
