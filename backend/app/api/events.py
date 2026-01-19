@@ -11,7 +11,7 @@ from datetime import date
 from app.database import get_db
 from app.api import deps
 from app.models.models import Event, Match, Team, User
-from app.schemas.events import EventCreate, EventUpdate, EventResponse, EventListResponse
+from app.schemas.events import *
 from app.services.events_service import *
 
 router = APIRouter()

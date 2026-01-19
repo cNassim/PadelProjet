@@ -1,4 +1,8 @@
-# tests events !!!
+# tests events 
+# ============================================
+# FICHIER : backend/tests/test_events.py
+# ============================================
+
 import pytest
 from pydantic import ValidationError
 from datetime import date, datetime
@@ -53,24 +57,6 @@ def test_create_event_success(event_service, create_mock_data):
     assert new_event.id is not None
     assert len(new_event.matches) == 1
 
-'''def test_create_event_duplicate_court_internal(event_service, create_mock_data):
-    t1_id, t2_id = create_mock_data
-    # Deux matchs demandés sur la même piste au même moment
-    event_data = {
-        "event_date": date(2026, 1, 10),
-        "event_time": "14:00",
-        "matches": [
-            {"team1_id": t1_id, "team2_id": t2_id, "court_number": 1},
-            {"team1_id": t1_id, "team2_id": t2_id, "court_number": 1}  # Doublon intentionnel
-        ]
-    }
-    
-    event_in = EventCreate(**event_data)
-
-    with pytest.raises(HTTPException) as exc:
-        event_service.create_event(event_in)
-    assert exc.value.status_code == 400
-    assert "Doublon de piste" in exc.value.detail'''
 def test_create_event_duplicate_court_internal(create_mock_data):
     """Vérifie que le schéma Pydantic bloque les doublons de piste"""
     t1_id, t2_id = create_mock_data
@@ -80,7 +66,7 @@ def test_create_event_duplicate_court_internal(create_mock_data):
         "event_time": "14:00",
         "matches": [
             {"team1_id": t1_id, "team2_id": t2_id, "court_number": 1},
-            {"team1_id": 100, "team2_id": 101, "court_number": 1} # ❌ Même piste
+            {"team1_id": 100, "team2_id": 101, "court_number": 1} 
         ]
     }
     
