@@ -92,29 +92,88 @@ def test_create_event_conflict_court(client, test_admin, test_teams, db_session)
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert "CONFLIT" in response.json()["detail"]
 
-def test_read_events(client, test_user, db_session):
-    """Vérifier la récupération de la liste des événements"""
+def test_read_events_filters(client, test_user, db_session):
+    """Vérifier les filtres start_date, end_date et month"""
     headers = get_auth_headers(client, "test@example.com", "ValidP@ssw0rd123")
     
-    event = Event(event_date=date.today(), event_time="10:00")
-    db_session.add(event)
+    e1 = Event(event_date=date(2025, 1, 1), event_time="10:00")
+    e2 = Event(event_date=date(2025, 6, 1), event_time="10:00")
+    db_session.add_all([e1, e2])
     db_session.commit()
     
-    response = client.get("/api/v1/events/", headers=headers)
-    assert response.status_code == status.HTTP_200_OK
-    assert len(response.json()["events"]) >= 1
+    # Filter month
+    response = client.get("/api/v1/events/?month=2025-01", headers=headers)
+    assert len(response.json()["events"]) == 1
+    
+    # Filter dates
+    response = client.get("/api/v1/events/?start_date=2025-05-01", headers=headers)
+    assert len(response.json()["events"]) == 1
 
-def test_delete_event(client, test_admin, db_session):
-    """Tester la suppression d'un événement (Admin uniquement)"""
+def test_create_event_internal_validation(client, test_admin, test_teams):
+    """Tester les erreurs de validation interne via Pydantic (pistes, équipes)"""
     headers = get_auth_headers(client, "admin@example.com", "AdminP@ssw0rd123")
     
-    event = Event(event_date=date.today(), event_time="10:00")
-    db_session.add(event)
-    db_session.commit()
-    db_session.refresh(event)
+    # 1. Doublon de piste (Géré par model_validator -> 422)
+    payload = {
+        "event_date": "2026-12-01", "event_time": "18:00",
+        "matches": [
+            {"team1_id": 1, "team2_id": 2, "court_number": 1},
+            {"team1_id": 3, "team2_id": 4, "court_number": 1}
+        ]
+    }
+    response = client.post("/api/v1/events/", json=payload, headers=headers)
+    assert response.status_code == 422
+
+    # 2. Équipe contre elle-même (Géré par model_validator -> 422)
+    payload = {
+        "event_date": "2026-12-01", "event_time": "18:00",
+        "matches": [{"team1_id": 1, "team2_id": 1, "court_number": 1}]
+    }
+    response = client.post("/api/v1/events/", json=payload, headers=headers)
+    assert response.status_code == 422
     
-    response = client.delete(f"/api/v1/events/{event.id}", headers=headers)
-    assert response.status_code == status.HTTP_204_NO_CONTENT
+def test_create_event_team_conflict(client, test_admin, test_teams, db_session):
+    """Vérifier le conflit si une équipe joue déjà à la même heure"""
+    headers = get_auth_headers(client, "admin@example.com", "AdminP@ssw0rd123")
+    tomorrow = date.today() + timedelta(days=2)
     
-    # Vérifier suppression
-    assert db_session.query(Event).filter(Event.id == event.id).first() is None
+    # Event existant
+    e = Event(event_date=tomorrow, event_time="19:00")
+    db_session.add(e); db_session.commit(); db_session.refresh(e)
+    m = Match(event_id=e.id, team1_id=test_teams[0].id, team2_id=test_teams[1].id, court_number=1, status="A_VENIR")
+    db_session.add(m); db_session.commit()
+    
+    # Nouvelle équipe jouant avec un membre déjà pris
+    new_event_data = {
+        "event_date": str(tomorrow), "event_time": "19:00",
+        "matches": [{"team1_id": test_teams[0].id, "team2_id": 999, "court_number": 2}]
+    }
+    response = client.post("/api/v1/events/", json=new_event_data, headers=headers)
+    assert response.status_code == 400
+    assert "CONFLIT" in response.json()["detail"]
+
+def test_update_event(client, test_admin, db_session):
+    """Tester la mise à jour d'un événement"""
+    headers = get_auth_headers(client, "admin@example.com", "AdminP@ssw0rd123")
+    e = Event(event_date=date.today(), event_time="10:00")
+    db_session.add(e); db_session.commit(); db_session.refresh(e)
+    
+    response = client.put(f"/api/v1/events/{e.id}", json={"event_time": "11:00"}, headers=headers)
+    assert response.status_code == 200
+    assert response.json()["event_time"] == "11:00"
+    
+    # Non trouvé
+    response = client.put("/api/v1/events/999", json={"event_time": "11:00"}, headers=headers)
+    assert response.status_code == 404
+
+def test_delete_event_restricted(client, test_admin, db_session, test_teams):
+    """Empêcher la suppression d'un événement avec des matchs terminés"""
+    headers = get_auth_headers(client, "admin@example.com", "AdminP@ssw0rd123")
+    e = Event(event_date=date.today(), event_time="10:00")
+    db_session.add(e); db_session.commit(); db_session.refresh(e)
+    m = Match(event_id=e.id, team1_id=test_teams[0].id, team2_id=test_teams[1].id, court_number=1, status="TERMINE")
+    db_session.add(m); db_session.commit()
+    
+    response = client.delete(f"/api/v1/events/{e.id}", headers=headers)
+    assert response.status_code == 400
+    assert "Impossible de supprimer" in response.json()["detail"]
