@@ -15,7 +15,7 @@ def test_password_validation_too_short():
             confirm_password="Short1!"
         )
     
-    assert "au moins 12 caractères" in str(exc_info.value)
+    assert "at least 12" in str(exc_info.value)
 
 def test_password_validation_no_uppercase():
     """Test validation sans majuscule"""

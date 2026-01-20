@@ -38,7 +38,7 @@ class PlayerUpdate(BaseModel):
     first_name: str = Field(..., min_length=2, max_length=50)
     last_name: str = Field(..., min_length=2, max_length=50)
     company: str = Field(..., min_length=2, max_length=100)
-    birth_date: date | None
+    birth_date: date 
     photo_url: str | None
 
     @validator('first_name', 'last_name')
