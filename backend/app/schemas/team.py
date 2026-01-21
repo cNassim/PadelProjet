@@ -2,7 +2,7 @@
 # backend/app/schemas/team.py
 # ============================================
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional, List
 
 # --- Sous-objets ---
@@ -33,6 +33,12 @@ class TeamResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class TeamListResponse(BaseModel):
+    teams: List[TeamResponse]
+    total: int
+    
+    # Nécessaire pour que Pydantic convertisse les objets Team de la liste
+    model_config = ConfigDict(from_attributes=True)
 
 # --- Création / modification d'une équipe ---
 class TeamCreate(BaseModel):

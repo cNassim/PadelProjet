@@ -36,23 +36,23 @@ async def add_security_headers(request, call_next):
 
 # --- ROUTES ---
 
-# 1. Authentification
+# Authentification
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
 
-# 2. Administration (✅ On garde leur travail)
+# Administration 
 app.include_router(admin.router, prefix="/api/v1/admin", tags=["Administration"])
 app.include_router(profile.router, prefix="/api/v1/profile", tags=["Profile"])
 
 
-# 3. Événements (✅ On garde ton travail)
+# Événements
 app.include_router(events.router, prefix="/api/v1/events", tags=["Events & Matches"])
 app.include_router(matches.router, prefix="/api/v1/matches", tags=["Matches"])
-# 4. Pools et Teams (✅ On garde leur activation de teams/pools)
+# Pools et Teams 
 app.include_router(players.router)
 app.include_router(pools.router, prefix="/api/v1/pools", tags=["Pools"])
 app.include_router(teams.router, prefix="/api/v1/teams", tags=["Teams"])
 
-# 5. Résultats (✅ On garde ton travail)
+# Résultats
 app.include_router(results.router, prefix="/api/v1/results", tags=["Results"])
 
 # Servir les fichiers statiques (photos de profil)
