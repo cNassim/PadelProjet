@@ -7,6 +7,7 @@ import os
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from datetime import date
 
 
 os.environ["SECRET_KEY"] = "P_XRGwK9DqGKISoKcAews8aC8KOybys3vWfUHe1bFxM"
@@ -81,11 +82,11 @@ def test_admin(db_session):
     db_session.refresh(admin)
     return admin
 
-from datetime import date
+
 
 @pytest.fixture
 def create_test_team(db_session):
-    # 1️⃣ Créer un joueur
+    #  Créer un joueur
     player1 = Player(
         first_name="Jean",
         last_name="Dupont",
@@ -104,11 +105,10 @@ def create_test_team(db_session):
     db_session.add(player2)
     db_session.commit()
 
-    # 2️⃣ Créer une équipe avec ce joueur
     team = Team(
         player1_id=player1.id,
-        player2_id=player2.id,       # si tu veux un deuxième joueur, tu peux l'ajouter
-        company="Padel Club"   # ✅ champ obligatoire
+        player2_id=player2.id,       
+        company="Padel Club" 
     )
     db_session.add(team)
     db_session.commit()
