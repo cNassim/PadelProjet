@@ -1,6 +1,5 @@
 from datetime import date
-from typing import Optional
-from pydantic import BaseModel, EmailStr, validator, Field
+from pydantic import BaseModel, validator, Field
 import re
 
 class PlayerCreate(BaseModel):
@@ -9,14 +8,9 @@ class PlayerCreate(BaseModel):
     last_name: str =Field(...,min_length = 2, max_length = 50)
     company: str = Field(..., min_length=2, max_length = 100)
     license_number: str = Field(...)  
-    #email : EmailStr  | None #facultatif
     birth_date: date 
-    photo_url: str | None
-#	2-50 caractères, lettres et espaces uniquement
-#   2-50 caractères, lettres et espaces uniquement
-#   	2-100 caractères
-#ormat : LXXXXXX (L suivi de 6 chiffres)
-# 	EMAIL	Format email valide, unique dans la base
+    photo_url: str | None = None
+
     @validator('first_name', 'last_name')
     def check_names(cls, v):
         if not re.match(r"^[A-Za-zÀ-ÖØ-öø-ÿ' -]+$", v):
@@ -34,17 +28,20 @@ class PlayerCreate(BaseModel):
         return v
 
 class PlayerUpdate(BaseModel):
-# même validation que PlayerCreate
-    first_name: str = Field(..., min_length=2, max_length=50)
-    last_name: str = Field(..., min_length=2, max_length=50)
-    company: str = Field(..., min_length=2, max_length=100)
-    birth_date: date 
-    photo_url: str | None
+    first_name: str | None = Field(None, min_length=2, max_length=50)
+    last_name: str | None = Field(None, min_length=2, max_length=50)
+    company: str | None = Field(None, min_length=2, max_length=100)
+    birth_date: date | None = None
+    photo_url: str | None = None
 
     @validator('first_name', 'last_name')
     def validate_names(cls, v):
+        if v is None:
+            return v
         if not re.match(r"^[A-Za-zÀ-ÖØ-öø-ÿ' -]+$", v):
-            raise ValueError("Le nom et prenom doivent contenir uniquement des lettres et des espaces.")
+            raise ValueError(
+                "Le nom et prenom doivent contenir uniquement des lettres et des espaces."
+            )
         return v
 
 #backend ne eut pas confirmer=>front qui doit envoyer la confirmation
@@ -74,4 +71,5 @@ class PlayersListResponse(BaseModel):
 class PlayerCreateResponse(BaseModel):
     """Schéma de réponse lors de la création d'un joueur (sans compte)"""
     player: PlayerResponse
+    message: str = "Joueur créé avec succès"
 

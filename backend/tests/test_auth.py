@@ -52,7 +52,7 @@ def test_brute_force_protection(client, test_user):
         if i < 4:
             assert response.status_code == status.HTTP_401_UNAUTHORIZED
         else:
-            assert response.status_code == status.HTTP_403_FORBIDDEN
+            assert response.status_code == 429
     
     # La 6ème tentative doit être bloquée même avec le bon mot de passe
     response = client.post("/api/v1/auth/login", json={
@@ -60,7 +60,7 @@ def test_brute_force_protection(client, test_user):
         "password": "ValidP@ssw0rd123"
     })
     
-    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert response.status_code == 429
     data = response.json()
     assert "locked_until" in data["detail"]
     assert "minutes_remaining" in data["detail"]

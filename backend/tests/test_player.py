@@ -1,5 +1,5 @@
 # ============================================
-# FICHIER : backend/tests/test_player.py
+# FICHIER : backend/tests/test_player.py  TEST d'intégration
 # ============================================
 
 import pytest
@@ -150,3 +150,61 @@ def test_update_player_validation_errors(client):
     # Test PRÉNOM trop long (ex: > 50 caractères)
     res_long = client.put(f"/api/v1/players/{player_id}", json={"first_name": "A" * 51})
     assert res_long.status_code == 422
+
+
+
+
+def test_get_all_players_success(client, db_session):
+    """Test récupération de la liste des joueurs (Admin requis)"""
+    # 1. On s'assure d'avoir au moins un joueur en base
+    res_create = client.post("/api/v1/players/", json={**PLAYER_DATA, "license_number": "L123789"})
+    
+    # 2. Appel API
+    response = client.get("/api/v1/players/")
+    
+    assert response.status_code == 200
+    data = response.json()
+    
+    # Vérification de la structure attendue par le Front (PlayersListResponse)
+    assert "players" in data
+    assert "total" in data
+    assert isinstance(data["players"], list)
+    assert data["total"] >= 1
+    # On vérifie qu'un des joueurs est bien Samy
+    assert any(p["first_name"] == "Samy" for p in data["players"])
+
+def test_get_player_by_id_success(client):
+    """Test récupération d'un joueur spécifique par son ID"""
+    # 1. Création du joueur
+    res_create = client.post("/api/v1/players/", json={**PLAYER_DATA, "license_number": "L456123"})
+    player_id = res_create.json()["player"]["id"]
+    
+    # 2. Appel API de lecture
+    response = client.get(f"/api/v1/players/{player_id}")
+    
+    assert response.status_code == 200
+    data = response.json()
+    
+    # Vérification des champs de PlayerResponse
+    assert data["id"] == player_id
+    assert data["first_name"] == "Samy"
+    assert data["license_number"] == "L456123"
+    assert "has_account" in data
+
+
+def test_get_player_not_found(client):
+    """
+    Test la récupération d'un joueur avec un ID inexistant.
+    Doit renvoyer une erreur 404 avec le message 'Player n'existe pas'.
+    """
+    # On utilise un ID très élevé qui a peu de chances d'exister
+    random_id = 999999
+    
+    response = client.get(f"/api/v1/players/{random_id}")
+    
+    # Vérification du code de statut
+    assert response.status_code == 404
+    
+    # Vérification du message d'erreur renvoyé par le backend
+    data = response.json()
+    assert data["detail"] == "Player n'existe pas"
