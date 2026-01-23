@@ -66,8 +66,8 @@
         >
           <div class="bg-gray-50 px-6 py-2 border-b flex justify-between items-center text-sm">
             <div class="flex items-center gap-2 text-gray-600">
-              <span>📅 {{ formatDate(match.event.date) }}</span>
-              <span>🕒 {{ match.event.time.slice(0, 5) }}</span>
+              <span>📅 {{ formatDate(match.event?.event_date) }}</span>
+              <span>🕒 {{ match.event?.event_time?.slice(0, 5) || '--:--' }}</span>
               <span class="bg-gray-200 text-gray-700 px-2 py-0.5 rounded text-xs">Piste {{ match.court_number }}</span>
             </div>
             <span :class="getStatusClass(match.status)" class="px-2 py-0.5 rounded-full text-xs font-semibold uppercase">
@@ -93,6 +93,7 @@
                 </div>
                 <div v-else class="text-xl font-bold text-gray-300">VS</div>
               </div>
+                
 
               <div class="flex-1 text-center md:text-left">
                 <div class="font-bold text-lg text-gray-800">{{ match.team2.company }}</div>
