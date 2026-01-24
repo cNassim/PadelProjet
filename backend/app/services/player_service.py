@@ -17,6 +17,7 @@ def validate_unique_fields(db: Session, licence: str, player_id: int = None):
 # Création d'un joueur seulement sans email
 
 def create_player_service(payload: PlayerCreate, db: Session)->Player:
+
     validate_unique_fields(db, licence=payload.license_number)
     new_player = Player(
         first_name=payload.first_name,
@@ -25,8 +26,6 @@ def create_player_service(payload: PlayerCreate, db: Session)->Player:
         license_number= payload.license_number,
         birth_date = payload.birth_date,
         photo_url=payload.photo_url
-        #email=payload.email,
-        #has_account=True
     )
     db.add(new_player)
     db.commit()
@@ -47,18 +46,19 @@ def create_player_service(payload: PlayerCreate, db: Session)->Player:
     )
     
 
-# MAJ d'un joueur
 def update_player_service(player_id: int, payload: PlayerUpdate, db: Session) -> Player:
     player = db.query(Player).filter(Player.id == player_id).first()
     if not player:
         raise HTTPException(status_code=404, detail="Player n'existe pas")
 
-    # On ne touche pas email / license_number / user_id
-    player.first_name = payload.first_name
-    player.last_name = payload.last_name
-    player.company = payload.company
-    player.birth_date = payload.birth_date
-    player.photo_url = payload.photo_url if payload.photo_url is not None else player.photo_url
+    data = payload.model_dump(exclude_unset=True)
+
+    FORBIDDEN_FIELDS = {"license_number"}  
+
+    for field, value in data.items():
+        if field in FORBIDDEN_FIELDS:
+            continue  
+        setattr(player, field, value)
 
     db.commit()
     db.refresh(player)

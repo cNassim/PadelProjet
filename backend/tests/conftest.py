@@ -3,12 +3,17 @@
 # ============================================
 
 import pytest
+import os
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from datetime import date
+
+
+os.environ["SECRET_KEY"] = "P_XRGwK9DqGKISoKcAews8aC8KOybys3vWfUHe1bFxM"
 from app.main import app
 from app.database import Base, get_db
-from app.models.models import User
+from app.models.models import Player, Team, User
 from app.core.security import get_password_hash
 
 # Base de données de test en mémoire
@@ -76,3 +81,36 @@ def test_admin(db_session):
     db_session.commit()
     db_session.refresh(admin)
     return admin
+
+
+
+@pytest.fixture
+def create_test_team(db_session):
+    #  Créer un joueur
+    player1 = Player(
+        first_name="Jean",
+        last_name="Dupont",
+        company="Padel Club",
+        license_number="L123456",
+        birth_date=date(1990, 1, 1)
+    )
+    player2 = Player(
+        first_name="Jean",
+        last_name="Dupont",
+        company="Padel Club",
+        license_number="L999998",
+        birth_date=date(1990, 1, 1)
+    )
+    db_session.add(player1)
+    db_session.add(player2)
+    db_session.commit()
+
+    team = Team(
+        player1_id=player1.id,
+        player2_id=player2.id,       
+        company="Padel Club" 
+    )
+    db_session.add(team)
+    db_session.commit()
+
+    return team
