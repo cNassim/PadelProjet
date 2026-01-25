@@ -5,7 +5,7 @@ import random
 from datetime import date, timedelta, datetime
 from sqlalchemy.orm import Session
 from app.database import SessionLocal, engine
-from app.models.models import Base, Player, Team, Pool, Event, Match, User
+from app.models.models import Base, Player, Team, Pool, Event, Match, User, LoginAttempt
 from app.core.security import get_password_hash
 
 # Configuration
@@ -17,10 +17,36 @@ def init_db():
     db = SessionLocal()
     
     try:
-        print("🌱 Démarrage de l'insertion des données de test...")
+        print("Démarrage de l'insertion des données de test...")
+        
+        # --- 0. NETTOYAGE SÉCURITÉ ---
+        print("Réinitialisation des tentatives de connexion...")
+        db.query(LoginAttempt).delete()
+        
+        # --- 0.1 S'ASSURER QUE L'ADMIN EXISTE ---
+        print("Vérification de l'administrateur...")
+        admin_email = "admin@padel.com"
+        admin = db.query(User).filter(User.email == admin_email).first()
+        if not admin:
+            admin = User(
+                email=admin_email,
+                password_hash=get_password_hash("Admin@2025!"),
+                role="ADMINISTRATEUR",
+                is_active=True,
+                must_change_password=False
+            )
+            db.add(admin)
+            print("   ✅ Administrateur créé.")
+        else:
+            # S'assurer que le mot de passe est le bon au cas où il aurait été changé
+            admin.password_hash = get_password_hash("Admin@2025!")
+            admin.is_active = True
+            print("   ℹ️ Administrateur déjà présent (mot de passe réinitialisé).")
+        
+        db.commit()
 
         # --- 1. JOUEURS ---
-        print("👤 Vérification des joueurs...")
+        print("Vérification des joueurs...")
         existing_players = db.query(Player).count()
         
         players_data = [
@@ -48,7 +74,7 @@ def init_db():
         print(f"   ✅ {len(all_players)} joueurs disponibles.")
 
         # --- 2. POULES ---
-        print("🎱 Gestion des poules...")
+        print("Gestion des poules...")
         pool = db.query(Pool).filter(Pool.name == "Poule A").first()
         if not pool:
             pool = Pool(name="Poule A")
@@ -59,7 +85,7 @@ def init_db():
             print("   ℹ️ Poule A existe déjà.")
 
         # --- 3. ÉQUIPES ---
-        print("hj Gestion des équipes...")
+        print("Gestion des équipes...")
         # On essaie de créer des binômes avec les joueurs de la même entreprise
         # (Hypothèse simplifiée: joueurs stockés par paire dans la liste)
         teams = []
@@ -87,11 +113,11 @@ def init_db():
         print(f"   ✅ {len(all_teams)} équipes prêtes.")
 
         if len(all_teams) < 2:
-            print("❌ Pas assez d'équipes pour créer des matchs. Arrêt.")
+            print("Pas assez d'équipes pour créer des matchs. Arrêt.")
             return
 
         # --- 4. ÉVÉNEMENTS & MATCHS (PASSÉS) ---
-        print("📅 Création de l'historique (Matchs terminés)...")
+        print("Création de l'historique (Matchs terminés)...")
         # Créer quelques matchs terminés la semaine dernière
         for i in range(3):
             date_event = date.today() - timedelta(days=2 + i)
@@ -125,7 +151,7 @@ def init_db():
         db.commit()
 
         # --- 5. ÉVÉNEMENTS & MATCHS (FUTURS) ---
-        print("📅 Création du planning (Matchs à venir)...")
+        print("Création du planning (Matchs à venir)...")
         for i in range(3):
             date_event = date.today() + timedelta(days=2 + i*2)
             if not db.query(Event).filter(Event.event_date == date_event).first():
@@ -148,7 +174,7 @@ def init_db():
                 print(f"   ➔ Match planifié pour le {date_event}")
         db.commit()
 
-        print("\n✨ Base de données initialisée avec succès !")
+        print("\n Base de données initialisée avec succès !")
         print("   - Joueurs et Équipes créés")
         print("   - Poule A créée")
         print("   - Résultats insérés (pour tester la page Résultats/Classement)")
