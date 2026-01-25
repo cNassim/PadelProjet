@@ -74,7 +74,7 @@ def test_get_my_matches_filter(db_session, test_user):
     assert matches[0].team1.company == "Entreprise A"
 
 def test_get_my_matches_no_player_profile(db_session, test_user):
-    # Test la branche 'if not player' (Ligne de coverage spécifique)
+    # Test la branche 'if not player' 
     service = MatchService(db_session)
     matches, total = service.liste_matches(current_user=test_user, my_matches=True)
     assert matches == []
