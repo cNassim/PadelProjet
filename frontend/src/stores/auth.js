@@ -49,11 +49,12 @@ export const useAuthStore = defineStore('auth', () => {
       
       setAuth(access_token, userData)
       return { success: true }
+
     } catch (err) {
       const errorData = err.response?.data?.detail
       
       if (typeof errorData === 'object') {
-        error.value = errorData.message || 'Erreur de connexion'
+        error.value = errorData.message || 'Email ou mot de passe incorrect'
         return { 
           success: false, 
           error: errorData.message,
@@ -64,11 +65,12 @@ export const useAuthStore = defineStore('auth', () => {
         error.value = errorData || 'Erreur de connexion'
         return { success: false, error: error.value }
       }
+
     } finally {
       loading.value = false
     }
   }
-
+  
   async function logout() {
     try {
       await authAPI.logout()

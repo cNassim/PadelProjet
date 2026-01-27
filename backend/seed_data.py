@@ -9,8 +9,8 @@ from app.models.models import Base, Player, Team, Pool, Event, Match, User, Logi
 from app.core.security import get_password_hash
 
 # Configuration
-NB_PLAYERS = 12  # Assez pour faire 6 équipes
-NB_TEAMS = 6     # Pour une poule complète
+NB_PLAYERS = 20  # Augmenté pour créer 10 équipes au total
+NB_TEAMS = 10
 
 def init_db():
     Base.metadata.create_all(bind=engine)
@@ -49,23 +49,24 @@ def init_db():
         print("Vérification des joueurs...")
         existing_players = db.query(Player).count()
         
-        players_data = [
-            ("Jean", "Dupont", "Tech Corp"), ("Pierre", "Durand", "Tech Corp"),
-            ("Alice", "Martin", "Innov Ltd"), ("Bob", "Lucas", "Innov Ltd"),
-            ("Charlie", "Brown", "StartUp Z"), ("David", "White", "StartUp Z"),
-            ("Eva", "Green", "Big Data SA"), ("Frank", "Blue", "Big Data SA"),
-            ("Grace", "Yellow", "Cloud Net"), ("Hank", "Red", "Cloud Net"),
-            ("Ivy", "Black", "Cyber Sec"), ("Jack", "Orange", "Cyber Sec")
-        ]
+        # Liste de base pour les noms d'entreprises
+        companies = ["Tech Corp", "Innov Ltd", "StartUp Z", "Big Data SA", "Cloud Net", 
+                     "Cyber Sec", "Future Soft", "Data Lab", "AI Vision", "Web Core"]
 
         if existing_players < NB_PLAYERS:
-            print(f"   ➔ Création de {NB_PLAYERS - existing_players} joueurs manquants...")
-            for i, (first, last, company) in enumerate(players_data):
+            print(f" ➔ Création de {NB_PLAYERS - existing_players} joueurs...")
+            for i in range(NB_PLAYERS):
+                # On crée des noms génériques pour atteindre 20 joueurs
+                company = companies[i // 2] # 2 joueurs par entreprise
                 license_num = f"L{100000 + i}"
+                
                 if not db.query(Player).filter(Player.license_number == license_num).first():
                     player = Player(
-                        first_name=first, last_name=last, company=company,
-                        license_number=license_num, birth_date=date(1990, 1, 1)
+                        first_name=f"Joueur{i+1}", 
+                        last_name=f"Nom{i+1}", 
+                        company=company,
+                        license_number=license_num, 
+                        birth_date=date(1990, 1, 1)
                     )
                     db.add(player)
             db.commit()
@@ -86,9 +87,10 @@ def init_db():
 
         # --- 3. ÉQUIPES ---
         print("Gestion des équipes...")
-        # On essaie de créer des binômes avec les joueurs de la même entreprise
-        # (Hypothèse simplifiée: joueurs stockés par paire dans la liste)
+        all_players = db.query(Player).all()
         teams = []
+
+        # On boucle pour créer 10 équipes (20 joueurs / 2)
         for i in range(0, len(all_players), 2):
             if i+1 < len(all_players):
                 p1 = all_players[i]
@@ -97,17 +99,22 @@ def init_db():
                 # Vérifier si l'équipe existe déjà
                 team = db.query(Team).filter(Team.player1_id == p1.id, Team.player2_id == p2.id).first()
                 if not team:
+                    # On n'assigne le pool_id (pool.id) que pour les 6 premières équipes (index i < 12 car i avance par 2)
+                    # Les équipes suivantes (index >= 12) auront pool_id = None (elles seront LIBRES)
+                    current_pool_id = pool.id if i < 12 else None 
+                    
                     team = Team(
                         company=p1.company,
                         player1_id=p1.id,
                         player2_id=p2.id,
-                        pool_id=pool.id
+                        pool_id=current_pool_id
                     )
                     db.add(team)
-                    print(f"   ➔ Équipe créée : {p1.company} ({p1.last_name}/{p2.last_name})")
+                    status = f"assignée à {pool.name}" if current_pool_id else "LIBRE"
+                    print(f"   ➔ Équipe créée ({status}) : {p1.company}")
                 teams.append(team)
+
         db.commit()
-        
         # Recharger les équipes complètes
         all_teams = db.query(Team).all()
         print(f"   ✅ {len(all_teams)} équipes prêtes.")
@@ -133,7 +140,7 @@ def init_db():
                     team1_id=all_teams[0].id,
                     team2_id=all_teams[1].id,
                     court_number=1,
-                    status="TERMINE",
+                    status="TERMINÉ",
                     score_team1="6-4, 6-3",
                     score_team2="4-6, 3-6"
                 )
@@ -142,7 +149,7 @@ def init_db():
                     team1_id=all_teams[2].id,
                     team2_id=all_teams[3].id,
                     court_number=2,
-                    status="TERMINE",
+                    status="TERMINÉ",
                     score_team1="2-6, 3-6",
                     score_team2="6-2, 6-3"
                 )

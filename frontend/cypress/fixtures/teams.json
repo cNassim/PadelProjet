@@ -1,0 +1,10 @@
+[
+  { "id": 1, "company": "TechCorp", "players": [{ "last_name": "Dupont" }, { "last_name": "Durand" }] },
+  { "id": 2, "company": "SoftInc", "players": [{ "last_name": "Martin" }, { "last_name": "Bernard" }] },
+  { "id": 3, "company": "WebAgency", "players": [{ "last_name": "Petit" }, { "last_name": "Thomas" }] },
+  { "id": 4, "company": "DataViz", "players": [{ "last_name": "Robert" }, { "last_name": "Richard" }] },
+  { "id": 5, "company": "CloudSys", "players": [{ "last_name": "Moreau" }, { "last_name": "Simon" }] },
+  { "id": 6, "company": "CyberSec", "players": [{ "last_name": "Lucas" }, { "last_name": "Vidal" }] },
+  { "id": 7, "company": "AI Labs", "players": [{ "last_name": "Petit" }, { "last_name": "Grand" }] },
+  { "id": 8, "company": "Blockchain Co", "players": [{ "last_name": "Fin" }, { "last_name": "Large" }] }
+]

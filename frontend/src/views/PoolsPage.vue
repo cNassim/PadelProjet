@@ -30,6 +30,13 @@
             <h2 class="text-xl font-bold">{{ pool.name }}</h2>
             <div v-if="authStore.isAdmin">
               <button 
+                @click="openEditModal(pool)" 
+                class="text-white hover:text-blue-200 p-1 rounded transition"
+                title="Modifier la poule"
+              >
+                ✏️
+              </button>
+              <button 
                 @click="deletePool(pool.id)" 
                 class="text-white hover:text-red-200 p-1 rounded transition"
                 title="Supprimer la poule"
@@ -66,7 +73,7 @@
     <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
       <div class="flex flex-col w-full max-w-2xl m-4 overflow-hidden bg-white shadow-2xl rounded-2xl max-h-[90vh]">
         <div class="p-6 text-white bg-blue-600 border-b">
-          <h2 class="text-xl font-bold">Créer une nouvelle poule</h2>
+          <h2 class="text-xl font-bold">{{ isEditing ? 'Modifier la poule' : 'Créer une nouvelle poule' }}</h2>
         </div>
 
         <div class="p-6 overflow-y-auto">
@@ -119,12 +126,13 @@
               <button type="button" @click="showModal = false" class="px-4 py-2 text-gray-600 rounded-lg hover:bg-gray-100">
                 Annuler
               </button>
+          
               <button 
                 type="submit" 
                 :disabled="submitting || poolForm.team_ids.length !== 6" 
                 class="px-6 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
-                {{ submitting ? 'Création...' : 'Créer la poule' }}
+                {{ submitting ? 'Enregistrement...' : (isEditing ? 'Enregistrer les modifications' : 'Créer la poule') }}
               </button>
             </div>
           </form>
@@ -150,6 +158,8 @@ const availableTeams = ref([])
 const showModal = ref(false)
 const submitting = ref(false)
 const formError = ref(null)
+const isEditing = ref(false);
+const editingPoolId = ref(null);
 
 const poolForm = reactive({
   name: '',
@@ -160,19 +170,18 @@ const poolForm = reactive({
 const loadData = async () => {
   loading.value = true
   try {
-    // 1. Charger les poules
+    //Charger les poules
     const poolsData = await poolService.getPools()
     // On gère si c'est un tableau direct ou un objet { pools: [...] }
     pools.value = Array.isArray(poolsData) ? poolsData : (poolsData.pools || [])
 
-    // 2. Charger les équipes (si Admin, pour la création)
+    // Charger les équipes (si Admin, pour la création)
     if (authStore.isAdmin) {
       console.log("🔄 Chargement des équipes pour la modale...")
       const result = await teamService.list()
       
       console.log("📦 Données reçues de l'API Team:", result)
 
-      // LOGIQUE ROBUSTE : On cherche le tableau d'équipes partout
       if (Array.isArray(result)) {
         // Cas 1 : L'API renvoie directement [Equipe1, Equipe2...]
         availableTeams.value = result
@@ -198,33 +207,57 @@ const loadData = async () => {
 }
 // --- ACTIONS ---
 const openAddModal = () => {
+  isEditing.value = false;
+  editingPoolId.value = null; 
   poolForm.name = ''
   poolForm.team_ids = []
   formError.value = null
   showModal.value = true
 }
 
+const openEditModal = (pool) => {
+  isEditing.value = true;
+  editingPoolId.value = pool.id;
+  poolForm.name = pool.name;
+  // On pré-remplit avec les IDs des équipes actuelles
+  poolForm.team_ids = pool.teams.map(t => t.id);
+  formError.value = null;
+  showModal.value = true;
+};
+
 const handleSubmit = async () => {
   if (poolForm.team_ids.length !== 6) {
-    formError.value = "Une poule doit contenir exactement 6 équipes."
-    return
+    formError.value = "Une poule doit contenir exactement 6 équipes.";
+    return;
   }
 
-  submitting.value = true
-  formError.value = null
+  submitting.value = true;
+  formError.value = null;
 
   try {
-    // Note: poolService.createPool() fonctionne grâce à l'alias dans pools.js
-    await poolService.createPool(poolForm)
-    alert("✅ Poule créée avec succès !")
-    showModal.value = false
-    loadData()
+    if (isEditing.value) {
+      await poolService.updatePool(editingPoolId.value, {
+        name: poolForm.name,
+        team_ids: poolForm.team_ids
+      });
+      console.log("✅ Mise à jour réussie");
+    } else {
+      await poolService.createPool(poolForm);
+      console.log("✅ Création réussie");
+    }
+    
+    //correction du problème de l'incohérence entre back et front (l'update se faisait que si je rafraichis la page)
+    showModal.value = false; // Ferme la modale
+    await loadData();        // Recharge les données pour éviter de devoir rafraîchir manuellement
+    alert(isEditing.value ? "Poule modifiée !" : "Poule créée !");
+
   } catch (err) {
-    formError.value = err.response?.data?.detail || "Erreur lors de la création."
+    console.error("❌ Erreur lors du submit:", err);
+    formError.value = err.response?.data?.detail || "Erreur de communication avec le serveur";
   } finally {
-    submitting.value = false
+    submitting.value = false;
   }
-}
+};
 
 const deletePool = async (id) => {
   if (!confirm("Attention : Supprimer une poule supprimera son lien avec les équipes. Continuer ?")) return
