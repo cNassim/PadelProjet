@@ -30,7 +30,7 @@ def createPool(pool_in:PoolCreate, db: Session= Depends(get_db), _: dict = Depen
 @router.put("/{pool_id}", response_model=PoolResponse)
 def update_pool(pool_id: int, pool_data: PoolCreate, db: Session = Depends(get_db), _: dict = Depends(get_current_admin)):
     service = PoolService(db)
-    return service.update_pool(pool_id)
+    return service.update_pool(pool_id,pool_data)
 
 
 #Supprimer une poule (Admin UNIQUEMENT) - DELETE/pools/{id} - cond: aucun match joué dans la poule.

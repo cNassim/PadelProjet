@@ -12,7 +12,10 @@ export const poolAPI = {
     // Gestion robuste : retourne le tableau directement ou l'objet qui le contient
     return response.data?.pools || response.data || []
   },
-
+  async update(id, data) {
+    const response = await api.put(`/pools/${id}`, data)
+    return response.data
+  },
   /**
    * Créer une poule
    */
@@ -34,5 +37,6 @@ export default {
   ...poolAPI,
   getPools: poolAPI.list,
   createPool: poolAPI.create,
+  updatePool: poolAPI.update,
   deletePool: poolAPI.remove
 }

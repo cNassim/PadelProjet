@@ -8,7 +8,7 @@
       { "id": 3, "company": "WebAgency", "players": [{ "last_name": "Petit" }, { "last_name": "Thomas" }] },
       { "id": 4, "company": "DataViz", "players": [{ "last_name": "Robert" }, { "last_name": "Richard" }] },
       { "id": 5, "company": "CloudSys", "players": [{ "last_name": "Petit" }, { "last_name": "Thomas" }] },
-      { "id": 6, "company": "CyberSec", "players": [{ "last_name": "Lucas" }, { "last_name": "Moreau" }] }
+      { "id": 6, "company": "CyberSec", "players": [{ "last_name": "Lucas" }, { "last_name": "Moreau" }] }    
     ]
   }
 ]

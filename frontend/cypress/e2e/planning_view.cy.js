@@ -102,8 +102,110 @@ describe('Gestion du Planning', () => {
       cy.get('.fixed.inset-0').should('not.exist');
     });
 
+    it('Vérifie les règles de suppression selon le statut du match', () => {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const datePresente = `${year}-${month}-15`; // Milieu du mois actuel
 
-    it('Affiche une erreur si deux équipes identiques sont sélectionnées', () => {
+      cy.intercept('GET', '**/api/v1/events*', {
+        body: {
+          events: [
+            {
+              id: 99,
+              event_date: datePresente,
+              event_time: "10:00:00",
+              matches: [{ id: 500, status: "TERMINE", team1: {company: "A"}, team2: {company: "B"} }]
+            }
+          ]
+        }
+      }).as('getPastEvents');
+
+      cy.visit('http://localhost:5173/planning');
+      cy.wait('@getPastEvents');
+
+      //affichage du badge
+      cy.get('.bg-indigo-100', { timeout: 10000 }).first().click({ force: true });
+
+      // verification du regle métier
+      cy.get('.fixed.inset-0').within(() => {
+        // Si le match est TERMINE, le bouton supprimer ne doit pas être là
+        cy.contains('Terminé').should('be.visible');
+        cy.contains('button', '🗑️ Supprimer').should('not.exist');
+      });
+    });
+
+    //Test Doublon de Piste
+    it('Affiche une erreur si la même piste est utilisée deux fois dans le même événement', () => {
+      cy.contains('button', 'Nouvel événement').click();
+
+      cy.get('.fixed.inset-0').should('be.visible').within(() => {
+        // Remplissage des prérequis
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const dateStr = tomorrow.toISOString().split('T')[0];
+
+        cy.get('input[type="date"]').type(dateStr);
+        cy.get('input[type="time"]').type('18:00');
+
+        // Ajout d'un deuxième match
+        cy.contains('button', '+ Ajouter un match').click();
+
+        // Configuration des matchs sur la même piste (Piste 1)
+        // Match 1 : Piste 1, Equipe 1, Equipe 2
+        cy.get('select').eq(0).select('1'); 
+        cy.get('select').eq(1).select(1); 
+        cy.get('select').eq(2).select(2); 
+
+        // Match 2 : Piste 1 (doublon), Equipe 3, Equipe 4
+        cy.get('select').eq(3).select('1'); 
+        cy.get('select').eq(4).select(3); 
+        cy.get('select').eq(5).select(4); 
+
+        // Tentative de création
+        cy.contains('button', 'Créer').click();
+
+        // Vérification de l'erreur métier
+        cy.contains('Erreur : Vous avez sélectionné la même piste pour plusieurs matchs.')
+          .should('be.visible');
+      });
+    });
+
+    //test de doublon de match
+    it('Affiche une erreur si une équipe est inscrite sur deux matchs différents le même jour', () => {
+      cy.contains('button', 'Nouvel événement').click();
+
+      cy.get('.fixed.inset-0').should('be.visible').within(() => {
+        // Prérequis (Date/Heure)
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const dateStr = tomorrow.toISOString().split('T')[0];
+        cy.get('input[type="date"]').type(dateStr);
+        cy.get('input[type="time"]').type('18:00');
+
+        cy.contains('button', '+ Ajouter un match').click();
+
+        // Configuration Match 1 (Piste 1 par défaut)
+        cy.get('select').eq(1).select(1); // Team 1
+        cy.get('select').eq(2).select(2); // Team 2
+        
+        // Config du 2e Match
+        //On change la piste pour eq(3) pour éviter le conflit de piste
+        cy.get('select').eq(3).select('2'); 
+        
+        // On sélectionne l'équipe doublon
+        cy.get('select').eq(4).select(1); // Team 1 (Déjà dans match 1)
+        cy.get('select').eq(5).select(3); // Team 2
+
+        cy.contains('button', 'Créer').click();
+
+        // Vérification de l'erreur métier
+        cy.contains('Erreur : Une équipe ne peut pas jouer deux matchs lors du même événement.')
+          .should('be.visible');
+      });
+    });
+
+    it('Affiche une erreur si on choisit la meme équipe pour jouer contre elle-même', () => {
       cy.contains('button', 'Nouvel événement').click();
 
       cy.get('.fixed.inset-0').should('be.visible').within(() => {

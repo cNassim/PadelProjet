@@ -96,7 +96,8 @@
                 <span class="text-lg font-bold text-blue-600">🕒 {{ event.event_time.slice(0, 5) }}</span>
                 <span v-if="authStore.isAdmin" class="flex gap-3">
                   <button @click="openEditModal(event)" class="text-sm text-blue-600 hover:text-blue-800">✏️ Modifier</button>
-                  <button @click="deleteEvent(event.id)" class="text-sm text-red-500 hover:text-red-700">🗑️ Supprimer</button>
+                  <!--<button @click="deleteEvent(event.id)" class="text-sm text-red-500 hover:text-red-700">🗑️ Supprimer</button>-->
+                  <button v-if="authStore.isAdmin && event.matches.every(m => m.status === 'A_VENIR')" @click="deleteEvent(event.id)" class="text-sm text-red-500 hover:text-red-700">🗑️ Supprimer</button>
                 </span>
               </div>
 
@@ -278,7 +279,7 @@ const loadData = async () => {
 
     // Charger équipes (Admin uniquement)
     if (authStore.isAdmin && teams.value.length === 0) {
-      // ✅ Compatibilité .list()
+      //Compatibilité .list()
       const teamRes = await teamService.list() 
       teams.value = Array.isArray(teamRes) ? teamRes : (teamRes.teams || teamRes.data || [])
     }
@@ -328,12 +329,12 @@ const removeMatchSlot = (index) => {
   eventForm.matches.splice(index, 1)
 }
 
-// ✅ SÉCURITÉ : On garde les validations anti-doublons !
+
 const handleSubmit = async () => {
   submitting.value = true
   formError.value = null
 
-  // 1. Validation : Equipes complètes et différentes
+  // Validation : Equipes complètes et différentes
   for (const m of eventForm.matches) {
     if (!m.team1_id || !m.team2_id) {
        formError.value = "Veuillez sélectionner deux équipes pour chaque match."
@@ -347,7 +348,7 @@ const handleSubmit = async () => {
     }
   }
 
-  // 2. Validation : Doublons de Pistes
+  //Validation : Doublons de Pistes
   const courts = eventForm.matches.map(m => m.court_number)
   const uniqueCourts = new Set(courts)
   if (courts.length !== uniqueCourts.size) {
@@ -356,7 +357,7 @@ const handleSubmit = async () => {
     return
   }
 
-  // 3. Validation : Doublons d'Equipes
+  // Validation : Doublons d'Equipes
   const teamsInForm = []
   eventForm.matches.forEach(m => {
     teamsInForm.push(m.team1_id)
@@ -422,7 +423,6 @@ const openDayDetails = (day) => {
   selectedDay.value = day
 }
 
-// ✅ STANDARD : On a retiré isPast(), formatStatus ne regarde plus la date
 const formatStatus = (s) => ({ 'A_VENIR': 'À venir', 'TERMINE': 'Terminé', 'ANNULE': 'Annulé' }[s] || s)
 const getStatusColor = (s) => ({ 'A_VENIR': 'text-blue-600', 'TERMINE': 'text-green-600', 'ANNULE': 'text-red-600' }[s] || 'text-gray-600')
 

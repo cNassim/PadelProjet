@@ -94,6 +94,48 @@ describe('Gestion des Matchs', () => {
       cy.get('.fixed.inset-0').should('not.exist')
     })
 
+    // Test de la règle métier : Suppression uniquement si A_VENIR
+    it('Ne doit pas afficher le bouton de suppression pour un match Terminé', () => {
+
+      //verif s'il y a un match terminé avant le test
+      cy.get('.space-y-4').contains('.bg-white', 'Terminé').first().within(() => {
+        cy.contains('button', '🗑️ Suppr.').should('not.exist');
+      });
+    });
+
+    // Test des filtres
+    it('Permet à l\'admin de filtrer les matchs par chaque statut', () => {
+      const statuses = [
+        { value: 'TERMINE', label: 'Terminé' },
+        { value: 'A_VENIR', label: 'À venir' },
+        { value: 'ANNULE', label: 'Annulé' }
+      ];
+
+      statuses.forEach(({ value, label }) => {
+        // Interception de l'appel API avec le paramètre de statut
+        cy.intercept('GET', `**/api/v1/matches?*status=${value}*`).as(`filter${value}`);
+        
+        // Sélection du statut dans le menu
+        cy.get('select').first().select(value);
+        
+        // Attente du retour API
+        cy.wait(`@filter${value}`);
+
+        // On vérifie l'affichage de manière globale dans la page
+        cy.get('body').then(($body) => {
+          if ($body.find('.space-y-4').length > 0) {
+            // Si des matchs existent, on vérifie que le label est présent
+            cy.contains(label).should('be.visible');
+          } else {
+            // Sinon, on vérifie que le message "Aucun match" est affiché
+            cy.contains('Aucun match trouvé pour ces critères.').should('be.visible');
+            cy.contains('📭').should('be.visible');
+          }
+        });
+      });
+    });
+
+
     //tets de suppression d'un match
     it('Supprime un match après confirmation', () => {
       cy.intercept('DELETE', '**/api/v1/matches/*', { statusCode: 204 }).as('deleteRequest')

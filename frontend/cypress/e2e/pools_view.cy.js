@@ -74,10 +74,57 @@ describe('Gestion des Poules', () => {
       cy.contains('6 / 6 sélectionnées').should('be.visible')
       cy.get('button[type="submit"]').should('not.be.disabled')
 
-      // TEST DE LA LIMITE : La 7ème équipe doit être désactivée (disabled)
+      // La 7ème équipe doit être désactivée (disabled)
       cy.get('input[type="checkbox"]').eq(6).should('be.disabled')
     })
 
+    it('Permet de modifier une poule existante (Nom et Équipes)', () => {
+      cy.intercept('PUT', '**/api/v1/pools/*', { 
+        statusCode: 200,
+        body: { id: 1, name: "Poule Alpha", teams: [] } // Le schéma calculera teams_count
+      }).as('updatePool')
+
+      cy.get('button[title="Modifier la poule"]').first().click()
+      cy.get('h2').should('contain', 'Modifier la poule')
+
+      // Modifier le nom
+      cy.get('input[placeholder="Ex: Poule A"]').clear().type('Poule Alpha')
+
+      // on décoche une équipe et on en coche une autre
+      cy.get('input[type="checkbox"]').first().uncheck()
+      cy.contains('5 / 6 sélectionnées').should('be.visible')
+      cy.get('button[type="submit"]').should('be.disabled') // Bloqué car != 6
+
+      // On coche l'équipe 7 (AI Labs) qui est libre grâce au teams.json
+      cy.get('input[type="checkbox"]').eq(6).check()
+      
+      // Valider l'envoi
+      cy.contains('6 / 6 sélectionnées').should('be.visible')
+      cy.get('button[type="submit"]').contains('Enregistrer les modifications').click()
+
+      cy.wait('@updatePool')
+
+      // Vérifie l'alerte de succès 
+      cy.on('window:alert', (text) => {
+        expect(text).to.contains('Poule modifiée')
+      })
+    })
+
+    it('Affiche une erreur si des matchs sont déjà joués', () => {
+      cy.intercept('PUT', '**/api/v1/pools/*', {
+        statusCode: 400,
+        body: { detail: "Impossible de modifier la poule : certains matchs ont déjà été joués." }
+      }).as('updateError')
+
+      cy.get('button[title="Modifier la poule"]').first().click()
+      cy.get('button[type="submit"]').click()
+
+      cy.wait('@updateError')
+      // Vérifie que le message d'erreur rouge s'affiche
+      cy.get('.bg-red-50').should('contain', 'Impossible de modifier la poule')
+    })
+
+    // POULE EXISTANTE
     it('Peut supprimer une poule existante', () => {
       cy.intercept('DELETE', `**/api/v1/pools/*`, { statusCode: 204 }).as('deleteRequest')
       
@@ -89,6 +136,7 @@ describe('Gestion des Poules', () => {
       cy.wait('@deleteRequest')
     })
 
+    // NOM DE POULE DEJA EXISTANT
     it('Affiche une erreur si le nom de la poule est déjà pris', () => {
         cy.intercept('POST', '**/api/v1/pools*', {
             statusCode: 422,
