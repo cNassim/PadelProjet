@@ -48,6 +48,7 @@ describe('Authentification', () => {
     
     // Vérifier le message d'erreur
     cy.contains('Email ou mot de passe incorrect').should('be.visible')
+    cy.contains('Tentatives restantes').should('be.visible')
   })
 
   it('Bloque le compte après 5 tentatives échouées', () => {
@@ -55,7 +56,7 @@ describe('Authentification', () => {
     
     // Faire 5 tentatives échouées
     for (let i = 0; i < 5; i++) {
-      cy.get('input[type="email"]').clear().type('admin@padel.com')
+      cy.get('input[type="email"]').clear().type('pierre.dubois@datalab.com')
       cy.get('input[type="password"]').clear().type('WrongPassword')
       cy.get('button[type="submit"]').click()
       cy.wait(500)

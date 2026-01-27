@@ -9,14 +9,6 @@ class PoolCreate(BaseModel):
     team_ids: List[int]
 
 
-class PoolResponse(BaseModel):
-    id: int
-    name: str
-    teams_count: int
-    teams: List[TeamResponse]
-
-    class Config:
-        from_attributes = True
 
 class PoolSchema(BaseModel):
     id: int
@@ -27,6 +19,20 @@ class PoolSchema(BaseModel):
     @property
     def teams_count(self)->int:
         return len(self.teams)
+    
+
+class PoolResponse(BaseModel):
+    id: int
+    name: str
+    teams: List[TeamResponse]
+
+    @computed_field
+    @property
+    def teams_count(self) -> int:
+        return len(self.teams)
+
+    class Config:
+        from_attributes = True
     
 class PoolListResponse(BaseModel):
     pools: List[PoolSchema]
