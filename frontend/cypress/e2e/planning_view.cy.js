@@ -38,6 +38,35 @@ describe('Gestion du Planning', () => {
       cy.wait('@getEvents');
     });
 
+    it('Comportement compte neuf : n\'affiche rien par défaut et affiche tout si on coche', () => {
+      // Interceptions
+      cy.intercept('GET', '**/api/v1/events?*show_all=false*', { body: { events: [] } }).as('getMyEventsEmpty');
+      cy.intercept('GET', '**/api/v1/events?*show_all=true*', { fixture: 'events.json' }).as('getAllEvents');
+
+      cy.visit('http://localhost:5173/planning');
+      cy.wait('@getMyEventsEmpty');
+
+      // 1. Vérifier que le calendrier est vide visuellement
+      cy.get('.bg-indigo-100').should('not.exist');
+
+      // 2. Ouvrir la modale en cliquant sur un jour (ex: le 15)
+      cy.contains('span', '15').click({ force: true });
+
+      // 3. Vérifier le message d'absence d'événement DANS la modale
+      cy.get('.fixed.inset-0').should('be.visible').within(() => {
+        cy.contains('Aucun événement prévu ce jour.').should('be.visible');
+        // Fermer la modale pour la suite du test
+        cy.get('button').contains(/Fermer|✖️/).click();
+      });
+
+      // 4. Cocher la case pour tout voir
+      cy.get('input[type="checkbox"]').check();
+      cy.wait('@getAllEvents');
+
+      // 5. Vérifier que les badges sont maintenant là
+      cy.get('.bg-indigo-100').should('have.length.at.least', 1);
+    });
+
     it('Ouvre les détails d\'un jour contenant des événements', () => {
       // On attend que les badges indigo (événements) soient chargés
       cy.get('.bg-indigo-100', { timeout: 10000 }).first().click({ force: true });

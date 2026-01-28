@@ -15,8 +15,6 @@ class EventBase(BaseModel):
     @field_validator('event_date')
     @classmethod
     def validate_date(cls, v):
-        # On autorise les dates passées pour l'historique, 
-        # mais pour la création on pourrait restreindre.
         return v
 
 class EventCreate(EventBase):
