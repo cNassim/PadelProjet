@@ -11,29 +11,6 @@ class EventService:
     def __init__(self, db: Session):
         self.db = db
 
-    '''def get_events(self, start_date= None,
-                end_date= None,
-                month= None):
-        query = self.db.query(Event).options(
-        joinedload(Event.matches).joinedload(Match.team1).joinedload(Team.player1),
-        joinedload(Event.matches).joinedload(Match.team1).joinedload(Team.player2),
-        joinedload(Event.matches).joinedload(Match.team2).joinedload(Team.player1),
-        joinedload(Event.matches).joinedload(Match.team2).joinedload(Team.player2)
-    )
-
-        if start_date:
-            query = query.filter(Event.event_date >= start_date)
-        if end_date:
-            query = query.filter(Event.event_date <= end_date)
-        if month:
-            year_str, month_str = month.split("-")
-            query = query.filter(
-                extract('year', Event.event_date) == int(year_str),
-                extract('month', Event.event_date) == int(month_str)
-            )
-
-        events = query.order_by(Event.event_date.asc(), Event.event_time.asc()).all()
-        return events'''
     def get_events(self, start_date=None, end_date=None, month=None, current_user=None, show_all=False):
         query = self.db.query(Event).options(
             joinedload(Event.matches).joinedload(Match.team1).joinedload(Team.player1),
@@ -81,7 +58,6 @@ class EventService:
         for m in event_in.matches:
             requested_teams.extend([m.team1_id, m.team2_id])
 
-        # --- VALIDATION EXTERNE (CONFLITS DB) ---
         date_str = str(event_in.event_date)
         day_events = self.db.query(Event).filter(cast(Event.event_date, String).like(f"{date_str}%")).all()
         new_time = event_in.event_time[:5] 

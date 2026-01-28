@@ -17,17 +17,6 @@ from app.services.events_service import *
 router = APIRouter()
 
 # GET /events
-'''@router.get("/", response_model=EventListResponse)
-def read_events(
-    start_date: Optional[date] = None,
-    end_date: Optional[date] = None,
-    month: Optional[str] = Query(None, pattern=r"^\d{4}-\d{2}$"),
-    db: Session = Depends(get_db),
-    current_user: User = Depends(deps.get_current_user)
-):
-    service = EventService(db)
-    events = service.get_events(start_date= start_date, end_date=end_date, month=month)
-    return {"events": events} '''
 @router.get("/", response_model=EventListResponse)
 def read_events(
     start_date: Optional[date] = None,

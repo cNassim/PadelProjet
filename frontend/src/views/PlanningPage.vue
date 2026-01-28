@@ -267,28 +267,6 @@ const paddingDays = computed(() => {
 })
 
 // --- CHARGEMENT ---
-/*const loadData = async () => {
-  loading.value = true
-  try {
-    const year = currentDate.value.getFullYear()
-    const month = String(currentDate.value.getMonth() + 1).padStart(2, '0')
-    
-    // Charger événements
-    const result = await eventService.getEvents({ month: `${year}-${month}` })
-    events.value = result.events
-
-    // Charger équipes (Admin uniquement)
-    if (authStore.isAdmin && teams.value.length === 0) {
-      //Compatibilité .list()
-      const teamRes = await teamService.list() 
-      teams.value = Array.isArray(teamRes) ? teamRes : (teamRes.teams || teamRes.data || [])
-    }
-  } catch (err) {
-    console.error("Erreur chargement:", err)
-  } finally {
-    loading.value = false
-  }
-}*/
 
 const loadData = async () => {
   loading.value = true
@@ -432,18 +410,6 @@ const deleteEvent = async (id) => {
 // --- HELPERS ---
 const isToday = (d) => d === todayStr
 const formatDateFull = (d) => new Date(d).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
-
-/*const filterEvents = (dayEvents) => {
-  if (authStore.isAdmin || showAllEvents.value) return dayEvents
-  const myPlayerId = authStore.user?.player?.id
-  if (!myPlayerId) return dayEvents
-  return dayEvents.filter(e => e.matches.some(m => 
-    m.team1?.players.some(p => p.id === myPlayerId) || 
-    m.team2?.players.some(p => p.id === myPlayerId)
-  ))
-}*/
-
-
 
 // Mise à jour de filterEvents pour nettoyer l'affichage local si un événement 
 // contient des matchs d'autres personnes (quand show_all est false)
