@@ -179,7 +179,7 @@
                       <option v-for="team in teams" :key="team.id" :value="team.id">
                         {{ team.company }} ({{ team.players[0]?.last_name }})
                       </option>
-                    </select>
+                    </select> 
                   </div>
                 </div>
               </div>
@@ -208,7 +208,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, reactive } from 'vue'
+import { ref, computed, onMounted, reactive, watch } from 'vue'
 import eventService from '../services/events'
 import teamService from '../services/teams'
 import { useAuthStore } from '../stores/auth'
@@ -267,7 +267,7 @@ const paddingDays = computed(() => {
 })
 
 // --- CHARGEMENT ---
-const loadData = async () => {
+/*const loadData = async () => {
   loading.value = true
   try {
     const year = currentDate.value.getFullYear()
@@ -280,6 +280,30 @@ const loadData = async () => {
     // Charger équipes (Admin uniquement)
     if (authStore.isAdmin && teams.value.length === 0) {
       //Compatibilité .list()
+      const teamRes = await teamService.list() 
+      teams.value = Array.isArray(teamRes) ? teamRes : (teamRes.teams || teamRes.data || [])
+    }
+  } catch (err) {
+    console.error("Erreur chargement:", err)
+  } finally {
+    loading.value = false
+  }
+}*/
+
+const loadData = async () => {
+  loading.value = true
+  try {
+    const year = currentDate.value.getFullYear()
+    const month = String(currentDate.value.getMonth() + 1).padStart(2, '0')
+    
+    // On transmet show_all au service
+    const result = await eventService.getEvents({ 
+      month: `${year}-${month}`,
+      show_all: showAllEvents.value 
+    })
+    events.value = result.events
+
+    if (authStore.isAdmin && teams.value.length === 0) {
       const teamRes = await teamService.list() 
       teams.value = Array.isArray(teamRes) ? teamRes : (teamRes.teams || teamRes.data || [])
     }
@@ -409,7 +433,7 @@ const deleteEvent = async (id) => {
 const isToday = (d) => d === todayStr
 const formatDateFull = (d) => new Date(d).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
 
-const filterEvents = (dayEvents) => {
+/*const filterEvents = (dayEvents) => {
   if (authStore.isAdmin || showAllEvents.value) return dayEvents
   const myPlayerId = authStore.user?.player?.id
   if (!myPlayerId) return dayEvents
@@ -417,6 +441,27 @@ const filterEvents = (dayEvents) => {
     m.team1?.players.some(p => p.id === myPlayerId) || 
     m.team2?.players.some(p => p.id === myPlayerId)
   ))
+}*/
+
+
+
+// Mise à jour de filterEvents pour nettoyer l'affichage local si un événement 
+// contient des matchs d'autres personnes (quand show_all est false)
+const filterEvents = (dayEvents) => {
+  if (!dayEvents) return []
+  if (authStore.isAdmin || showAllEvents.value) return dayEvents
+  
+  const myPlayerId = authStore.user?.player?.id
+  if (!myPlayerId) return []
+
+  // On map les événements pour ne garder QUE les matchs de l'utilisateur à l'intérieur
+  return dayEvents.map(event => ({
+    ...event,
+    matches: event.matches.filter(m => 
+      m.team1?.player1_id === myPlayerId || m.team1?.player2_id === myPlayerId ||
+      m.team2?.player1_id === myPlayerId || m.team2?.player2_id === myPlayerId
+    )
+  })).filter(e => e.matches.length > 0)
 }
 
 const openDayDetails = (day) => {
@@ -425,6 +470,12 @@ const openDayDetails = (day) => {
 
 const formatStatus = (s) => ({ 'A_VENIR': 'À venir', 'TERMINE': 'Terminé', 'ANNULE': 'Annulé' }[s] || s)
 const getStatusColor = (s) => ({ 'A_VENIR': 'text-blue-600', 'TERMINE': 'text-green-600', 'ANNULE': 'text-red-600' }[s] || 'text-gray-600')
+
+// Surveillance de la checkbox
+watch(showAllEvents, () => {
+  loadData() // Recharge les données avec le nouveau paramètre show_all
+})
+
 
 onMounted(() => {
   loadData()

@@ -17,7 +17,7 @@ from app.services.events_service import *
 router = APIRouter()
 
 # GET /events
-@router.get("/", response_model=EventListResponse)
+'''@router.get("/", response_model=EventListResponse)
 def read_events(
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
@@ -27,7 +27,26 @@ def read_events(
 ):
     service = EventService(db)
     events = service.get_events(start_date= start_date, end_date=end_date, month=month)
-    return {"events": events} 
+    return {"events": events} '''
+@router.get("/", response_model=EventListResponse)
+def read_events(
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
+    month: Optional[str] = Query(None, pattern=r"^\d{4}-\d{2}$"),
+    show_all: bool = Query(False), # Ajout du paramètre pour basculer l'affichage
+    db: Session = Depends(get_db),
+    current_user: User = Depends(deps.get_current_user)
+):
+    service = EventService(db)
+    # On passe current_user et show_all au service
+    events = service.get_events(
+        start_date=start_date, 
+        end_date=end_date, 
+        month=month, 
+        current_user=current_user, 
+        show_all=show_all
+    )
+    return {"events": events}
 
 # POST /events (ADMIN ONLY)
 @router.post("/", response_model=EventResponse, status_code=status.HTTP_201_CREATED)
