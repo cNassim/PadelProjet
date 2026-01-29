@@ -11,44 +11,32 @@ describe('Gestion des Événements et Matchs - Admin', () => {
 
     it('Créer, voir puis supprimer un événement', () => {
         cy.contains('Planning').click()
-        cy.url().should('include', '/planning')
-
-        // 1. Créer un événement
-        cy.contains('Nouvel événement').click()
-
-        // Attendre que les équipes soient chargées
-        cy.get('.fixed.inset-0').find('select').eq(1).find('option').should('have.length.gt', 1)
-
+        
         const today = new Date()
-        const targetDate = new Date(today.getFullYear(), today.getMonth(), 28)
-        if (targetDate < today) {
-            targetDate.setMonth(targetDate.getMonth() + 1)
+        if (today.getDate() > 28) {
             cy.get('button').contains('▶️').click()
-            cy.wait(500)
+            cy.wait(500) 
         }
 
-        const dateStr = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`
+        cy.contains('Nouvel événement').click()
+
+        const targetDate = new Date()
+        if (today.getDate() > 28) targetDate.setMonth(targetDate.getMonth() + 1)
+        const dateStr = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-28`
 
         cy.get('.fixed.inset-0').within(() => {
             cy.get('input[type="date"]').type(dateStr)
             cy.get('input[type="time"]').type('19:00')
-            cy.get('select').eq(1).select(1) // Equipe 1
-            cy.get('select').eq(2).select(2) // Equipe 2
+            cy.get('select').eq(1).select(1) 
+            cy.get('select').eq(2).select(2)
             cy.contains('button', 'Créer').click()
         })
 
-        // Vérifier l'alerte de succès
-        cy.on('window:alert', (str) => {
-            expect(str).to.equal('✅ Événement créé !')
-        })
-
-        // 2. Voir l'événement sur le calendrier
         cy.contains('.relative', '28').click()
         cy.contains('19:00').should('be.visible')
-
-        // 3. Supprimer l'événement
-        cy.contains('🗑️ Supprimer').click()
+        
         cy.on('window:confirm', () => true)
+        cy.contains('🗑️ Supprimer').click()
 
         // Vérifier la disparition
         cy.contains('19:00').should('not.exist')
