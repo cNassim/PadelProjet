@@ -120,8 +120,10 @@ def init_db():
             
             if not existing_team:
                 pool_id = pool.id if i < 12 else None
+                team_idx = (i // 2) + 1
+                unique_company_name = f"{p1.company} Team {team_idx}"
                 team = Team(
-                    company=p1.company, 
+                    company=unique_company_name, 
                     player1_id=p1.id, 
                     player2_id=p2.id, 
                     pool_id=pool_id
@@ -147,28 +149,18 @@ def init_db():
             db.add(event)
             db.commit()
 
-                # Créer 2 matchs par événement
-                m1 = Match(
-                    event_id=event.id,
-                    team1_id=all_teams[0].id,
-                    team2_id=all_teams[1].id,
-                    court_number=1,
-                    status="TERMINE",
-                    score_team1="6-4, 6-3",
-                    score_team2="4-6, 3-6"
-                )
-                m2 = Match(
-                    event_id=event.id,
-                    team1_id=all_teams[2].id,
-                    team2_id=all_teams[3].id,
-                    court_number=2,
-                    status="TERMINE",
-                    score_team1="2-6, 3-6",
-                    score_team2="6-2, 6-3"
-                )
-                db.add_all([m1, m2])
-                print(f"   ➔ Résultats ajoutés pour le {date_event}")
-        db.commit()
+            m1 = Match(
+                event_id=event.id,
+                team1_id=all_teams[0].id,
+                team2_id=all_teams[1].id,
+                court_number=1,
+                status="TERMINE", # <--- CORRECTION ICI (PAS D'ACCENT)
+                score_team1="6-4, 6-3",
+                score_team2="4-6, 3-6"
+            )
+            db.add(m1)
+            print("   ➔ Match terminé ajouté.")
+            db.commit()
 
         # Match Futur
         date_future = date.today() + timedelta(days=2)
