@@ -1,13 +1,9 @@
-// ============================================
-// FICHIER : frontend/src/views/ResultsPage.vue
-// ============================================
-
 <template>
   <div class="min-h-screen px-4 py-8 bg-gray-50">
     <div class="max-w-5xl mx-auto">
       
       <div class="mb-8 text-center">
-        <h1 class="text-3xl font-bold text-gray-800">📊 Résultats & Classement</h1>
+        <h1 class="text-3xl font-bold text-gray-800" data-cy="page-title">📊 Résultats & Classement</h1>
         <p class="text-gray-600">Suivez les performances des entreprises</p>
       </div>
 
@@ -15,6 +11,7 @@
         <div class="bg-white p-1 rounded-xl shadow-sm border border-gray-200 inline-flex">
           <button
             @click="activeTab = 'ranking'"
+            data-cy="tab-ranking"
             :class="[
               'px-6 py-2.5 rounded-lg text-sm font-medium transition-all',
               activeTab === 'ranking' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'
@@ -25,6 +22,7 @@
           <button
             v-if="!authStore.isAdmin && authStore.isAuthenticated"
             @click="activeTab = 'history'"
+            data-cy="tab-history"
             :class="[
               'px-6 py-2.5 rounded-lg text-sm font-medium transition-all',
               activeTab === 'history' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'
@@ -41,7 +39,7 @@
 
       <div v-else-if="activeTab === 'ranking'" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="overflow-x-auto">
-          <table class="w-full">
+          <table class="w-full" data-cy="ranking-table">
             <thead class="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Pos</th>
@@ -54,7 +52,12 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
-              <tr v-for="row in rankings" :key="row.company" class="hover:bg-gray-50 transition-colors">
+              <tr 
+                v-for="row in rankings" 
+                :key="row.company" 
+                class="hover:bg-gray-50 transition-colors"
+                data-cy="ranking-row"
+              >
                 <td class="px-6 py-4 whitespace-nowrap">
                   <span 
                     class="inline-flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm"
@@ -104,21 +107,21 @@
             <div class="p-3 bg-blue-100 text-blue-600 rounded-lg text-2xl">🎾</div>
             <div>
               <p class="text-sm text-gray-500">Matchs joués</p>
-              <p class="text-2xl font-bold text-gray-800">{{ stats.total }}</p>
+              <p class="text-2xl font-bold text-gray-800" data-cy="stat-total">{{ stats.total }}</p>
             </div>
           </div>
           <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
             <div class="p-3 bg-green-100 text-green-600 rounded-lg text-2xl">🏆</div>
             <div>
               <p class="text-sm text-gray-500">Victoires</p>
-              <p class="text-2xl font-bold text-gray-800">{{ stats.wins }}</p>
+              <p class="text-2xl font-bold text-gray-800" data-cy="stat-wins">{{ stats.wins }}</p>
             </div>
           </div>
           <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
             <div class="p-3 bg-red-100 text-red-600 rounded-lg text-2xl">📉</div>
             <div>
               <p class="text-sm text-gray-500">Défaites</p>
-              <p class="text-2xl font-bold text-gray-800">{{ stats.losses }}</p>
+              <p class="text-2xl font-bold text-gray-800" data-cy="stat-losses">{{ stats.losses }}</p>
             </div>
           </div>
         </div>
@@ -127,11 +130,16 @@
           <div class="p-6 border-b border-gray-100">
             <h3 class="font-bold text-gray-800">Historique des matchs</h3>
           </div>
-          <div v-if="myResults.length === 0" class="p-8 text-center text-gray-500">
+          <div v-if="myResults.length === 0" class="p-8 text-center text-gray-500" data-cy="no-history">
             Vous n'avez pas encore joué de match.
           </div>
-          <div v-else class="divide-y divide-gray-100">
-            <div v-for="match in myResults" :key="match.id" class="p-4 flex items-center justify-between hover:bg-gray-50">
+          <div v-else class="divide-y divide-gray-100" data-cy="history-list">
+            <div 
+              v-for="match in myResults" 
+              :key="match.id" 
+              class="p-4 flex items-center justify-between hover:bg-gray-50"
+              data-cy="history-item"
+            >
               <div class="flex flex-col">
                 <span class="text-sm text-gray-500">{{ formatDate(match.date) }}</span>
                 <span class="font-medium text-gray-800">vs {{ match.opponent }}</span>

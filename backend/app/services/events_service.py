@@ -11,16 +11,15 @@ class EventService:
     def __init__(self, db: Session):
         self.db = db
 
-    def get_events(self, start_date= None,
-                end_date= None,
-                month= None):
+    def get_events(self, start_date=None, end_date=None, month=None, current_user=None, show_all=False):
         query = self.db.query(Event).options(
-        joinedload(Event.matches).joinedload(Match.team1).joinedload(Team.player1),
-        joinedload(Event.matches).joinedload(Match.team1).joinedload(Team.player2),
-        joinedload(Event.matches).joinedload(Match.team2).joinedload(Team.player1),
-        joinedload(Event.matches).joinedload(Match.team2).joinedload(Team.player2)
-    )
+            joinedload(Event.matches).joinedload(Match.team1).joinedload(Team.player1),
+            joinedload(Event.matches).joinedload(Match.team1).joinedload(Team.player2),
+            joinedload(Event.matches).joinedload(Match.team2).joinedload(Team.player1),
+            joinedload(Event.matches).joinedload(Match.team2).joinedload(Team.player2)
+        )
 
+        # Filtres temporels existants
         if start_date:
             query = query.filter(Event.event_date >= start_date)
         if end_date:
@@ -32,8 +31,22 @@ class EventService:
                 extract('month', Event.event_date) == int(month_str)
             )
 
-        events = query.order_by(Event.event_date.asc(), Event.event_time.asc()).all()
-        return events
+        # Logique de filtrage par utilisateur
+        # Si l'utilisateur n'est pas Admin et qu'il ne demande pas 'show_all'
+        if current_user and current_user.role != "ADMINISTRATEUR" and not show_all:
+            player_id = current_user.player.id if current_user.player else None
+            
+            if player_id:
+                # On filtre les événements qui possèdent au moins un match où le joueur participe
+                query = query.join(Event.matches).filter(
+                    (Match.team1_id.in_(self.db.query(Team.id).filter((Team.player1_id == player_id) | (Team.player2_id == player_id)))) |
+                    (Match.team2_id.in_(self.db.query(Team.id).filter((Team.player1_id == player_id) | (Team.player2_id == player_id))))
+                ).distinct()
+            else:
+                # Si le compte n'est lié à aucun joueur, on renvoie une liste vide par défaut
+                return []
+
+        return query.order_by(Event.event_date.asc(), Event.event_time.asc()).all()
     
     
     def create_event(self, event_in: EventCreate): 
@@ -45,7 +58,6 @@ class EventService:
         for m in event_in.matches:
             requested_teams.extend([m.team1_id, m.team2_id])
 
-        # --- VALIDATION EXTERNE (CONFLITS DB) ---
         date_str = str(event_in.event_date)
         day_events = self.db.query(Event).filter(cast(Event.event_date, String).like(f"{date_str}%")).all()
         new_time = event_in.event_time[:5] 

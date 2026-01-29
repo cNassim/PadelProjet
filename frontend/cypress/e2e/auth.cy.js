@@ -56,7 +56,7 @@ describe('Authentification', () => {
     
     // Faire 5 tentatives échouées
     for (let i = 0; i < 5; i++) {
-      cy.get('input[type="email"]').clear().type('pierre.dubois@datalab.com')
+      cy.get('input[type="email"]').clear().type('pierre.duboiss@datalab.com')
       cy.get('input[type="password"]').clear().type('WrongPassword')
       cy.get('button[type="submit"]').click()
       cy.wait(500)

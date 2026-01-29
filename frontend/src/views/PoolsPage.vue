@@ -25,24 +25,11 @@
 
       <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div v-for="pool in pools" :key="pool.id" class="bg-white shadow-lg rounded-xl overflow-hidden flex flex-col">
-          
           <div class="bg-blue-600 p-4 flex justify-between items-center text-white">
             <h2 class="text-xl font-bold">{{ pool.name }}</h2>
             <div v-if="authStore.isAdmin">
-              <button 
-                @click="openEditModal(pool)" 
-                class="text-white hover:text-blue-200 p-1 rounded transition"
-                title="Modifier la poule"
-              >
-                ✏️
-              </button>
-              <button 
-                @click="deletePool(pool.id)" 
-                class="text-white hover:text-red-200 p-1 rounded transition"
-                title="Supprimer la poule"
-              >
-                🗑️
-              </button>
+              <button @click="openEditModal(pool)" class="text-white hover:text-blue-200 p-1 mr-2 rounded transition" title="Modifier la poule">✏️</button>
+              <button @click="deletePool(pool.id)" class="text-white hover:text-red-200 p-1 rounded transition" title="Supprimer la poule">🗑️</button>
             </div>
           </div>
 
@@ -50,7 +37,6 @@
             <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
               {{ pool.teams ? pool.teams.length : 0 }} Équipes
             </div>
-            
             <ul v-if="pool.teams && pool.teams.length > 0" class="space-y-2">
               <li v-for="team in pool.teams" :key="team.id" class="flex items-center gap-3 p-2 rounded hover:bg-gray-50 border border-transparent hover:border-gray-100 transition">
                 <span class="w-2 h-2 rounded-full bg-green-500"></span>
@@ -78,28 +64,21 @@
 
         <div class="p-6 overflow-y-auto">
           <form @submit.prevent="handleSubmit" class="space-y-6">
-            
             <div>
               <label class="block mb-1 text-sm font-semibold text-gray-700">Nom de la poule</label>
-              <input 
-                v-model="poolForm.name" 
-                type="text" 
-                placeholder="Ex: Poule A" 
-                required 
-                class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-              >
+              <input v-model="poolForm.name" type="text" placeholder="Ex: Poule A"  required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
             </div>
 
             <div>
               <div class="flex justify-between items-center mb-2">
-                <label class="block text-sm font-semibold text-gray-700">Sélectionner les équipes</label>
+                <label class="block text-sm font-semibold text-gray-700">Sélectionner les équipes libres</label>
                 <span :class="poolForm.team_ids.length === 6 ? 'text-green-600 font-bold' : 'text-blue-600'">
                   {{ poolForm.team_ids.length }} / 6 sélectionnées
                 </span>
               </div>
               
               <div class="border rounded-lg max-h-60 overflow-y-auto p-2 bg-gray-50 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <div v-for="team in availableTeams" :key="team.id" class="flex items-center p-2 bg-white border rounded hover:bg-blue-50 cursor-pointer">
+                <div v-for="team in availableTeamsDisplay" :key="team.id" class="flex items-center p-2 bg-white border rounded hover:bg-blue-50 cursor-pointer">
                   <input 
                     type="checkbox" 
                     :value="team.id" 
@@ -123,10 +102,7 @@
             </div>
 
             <div class="flex justify-end gap-3 pt-4 border-t">
-              <button type="button" @click="showModal = false" class="px-4 py-2 text-gray-600 rounded-lg hover:bg-gray-100">
-                Annuler
-              </button>
-          
+              <button type="button" @click="showModal = false" class="px-4 py-2 text-gray-600 rounded-lg hover:bg-gray-100">Annuler</button>
               <button 
                 type="submit" 
                 :disabled="submitting || poolForm.team_ids.length !== 6" 
@@ -139,32 +115,37 @@
         </div>
       </div>
     </div>
-
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useAuthStore } from '../stores/auth'
-import poolService from '../services/pools' // Utilise l'alias getPools qu'on a créé
-import teamService from '../services/teams' // Utilise .list()
+import poolService from '../services/pools'
+import teamService from '../services/teams'
 
 const authStore = useAuthStore()
 
 // --- ETAT ---
 const loading = ref(true)
 const pools = ref([])
-const availableTeams = ref([])
+const allTeams = ref([]) // Renommé pour plus de clarté
 const showModal = ref(false)
 const submitting = ref(false)
 const formError = ref(null)
-const isEditing = ref(false);
-const editingPoolId = ref(null);
+const isEditing = ref(false)
+const editingPoolId = ref(null)
 
 const poolForm = reactive({
   name: '',
   team_ids: []
 })
+
+const availableTeamsDisplay = computed(() => {
+  return allTeams.value.filter(team => {
+    return !team.pool_id || (isEditing.value && team.pool_id === editingPoolId.value);
+  });
+});
 
 // --- CHARGEMENT ---
 const loadData = async () => {
@@ -184,17 +165,17 @@ const loadData = async () => {
 
       if (Array.isArray(result)) {
         // Cas 1 : L'API renvoie directement [Equipe1, Equipe2...]
-        availableTeams.value = result
+        allTeams.value = result
       } else if (result.teams && Array.isArray(result.teams)) {
         // Cas 2 : L'API renvoie { teams: [Equipe1...] } (Standard JSONAPI)
-        availableTeams.value = result.teams
+        allTeams.value = result.teams
       } else if (result.data && Array.isArray(result.data)) {
         // Cas 3 : L'API renvoie { data: [Equipe1...] } (Parfois axios ou pagination)
-        availableTeams.value = result.data
+        allTeams.value = result.data
       } else {
         // Cas 4 : Format inconnu, on met vide pour éviter le crash
         console.warn("⚠️ Format des équipes non reconnu", result)
-        availableTeams.value = []
+        allTeams.value = []
       }
       
       console.log("✅ Équipes stockées dans le sélecteur :", availableTeams.value)
@@ -205,6 +186,7 @@ const loadData = async () => {
     loading.value = false
   }
 }
+
 // --- ACTIONS ---
 const openAddModal = () => {
   isEditing.value = false;
@@ -224,6 +206,7 @@ const openEditModal = (pool) => {
   formError.value = null;
   showModal.value = true;
 };
+
 
 const handleSubmit = async () => {
   if (poolForm.team_ids.length !== 6) {
@@ -247,8 +230,8 @@ const handleSubmit = async () => {
     }
     
     //correction du problème de l'incohérence entre back et front (l'update se faisait que si je rafraichis la page)
-    showModal.value = false; // Ferme la modale
-    await loadData();        // Recharge les données pour éviter de devoir rafraîchir manuellement
+    showModal.value = false; 
+    await loadData();        
     alert(isEditing.value ? "Poule modifiée !" : "Poule créée !");
 
   } catch (err) {
