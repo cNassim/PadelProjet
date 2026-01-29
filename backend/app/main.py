@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
-from app.api import auth, teams, pools, admin, profile, events, admin
+from app.api import auth, teams, pools, admin, profile, events, matches, results, players
 from app.database import engine
 from app.models import models
 from pathlib import Path
@@ -19,7 +19,8 @@ app = FastAPI(
 # Configuration CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.allowed_origins,
+    #allow_origins=settings.allowed_origins,
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -37,20 +38,24 @@ async def add_security_headers(request, call_next):
 
 # --- ROUTES ---
 
-# 1. Authentification
+# Authentification
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
 
-# 2. Administration (✅ On garde leur travail)
+# Administration 
 app.include_router(admin.router, prefix="/api/v1/admin", tags=["Administration"])
 app.include_router(profile.router, prefix="/api/v1/profile", tags=["Profile"])
 
 
-# 3. Événements (✅ On garde ton travail)
+# Événements
 app.include_router(events.router, prefix="/api/v1/events", tags=["Events & Matches"])
-
-# 4. Pools et Teams (✅ On garde leur activation de teams/pools)
+app.include_router(matches.router, prefix="/api/v1/matches", tags=["Matches"])
+# Pools et Teams 
+app.include_router(players.router)
 app.include_router(pools.router, prefix="/api/v1/pools", tags=["Pools"])
 app.include_router(teams.router, prefix="/api/v1/teams", tags=["Teams"])
+
+# Résultats
+app.include_router(results.router, prefix="/api/v1/results", tags=["Results"])
 
 # Servir les fichiers statiques (photos de profil)
 uploads_path = Path("uploads")

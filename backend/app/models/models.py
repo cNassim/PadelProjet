@@ -6,7 +6,7 @@ from sqlalchemy import Boolean, Column, Integer, String, DateTime, ForeignKey, T
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.database import Base
-from sqlalchemy.orm import relationship
+
 
 class User(Base):
     __tablename__ = "users"
@@ -30,6 +30,7 @@ class LoginAttempt(Base):
     attempts_count = Column(Integer, default=0, nullable=False)
     last_attempt = Column(DateTime(timezone=True))
     locked_until = Column(DateTime(timezone=True), nullable=True)
+
 
 class Player(Base):
     __tablename__="players"
@@ -89,6 +90,11 @@ class Team(Base):
     pool = relationship("Pool", back_populates="teams")
     matches_as_team1 = relationship("Match", back_populates="team1", foreign_keys="[Match.team1_id]")
     matches_as_team2 = relationship("Match", back_populates="team2", foreign_keys="[Match.team2_id]")
+    
+    # ✅ AJOUT : Propriété virtuelle pour la compatibilité avec les schémas Pydantic
+    @property
+    def players(self):
+        return [self.player1, self.player2]
 
 
 

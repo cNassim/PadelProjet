@@ -1,0 +1,197 @@
+# ============================================
+# FICHIER : backend/seed_data.py
+# ============================================
+import random
+from datetime import date, timedelta, datetime
+from sqlalchemy.orm import Session
+from app.database import SessionLocal, engine
+from app.models.models import Base, Player, Team, Pool, Event, Match, User, LoginAttempt
+from app.core.security import get_password_hash
+
+# Configuration
+NB_PLAYERS = 20  # Augmenté pour créer 10 équipes au total
+NB_TEAMS = 10
+
+def init_db():
+    Base.metadata.create_all(bind=engine)
+    db = SessionLocal()
+    
+    try:
+        print("Démarrage de l'insertion des données de test...")
+        
+        # --- 0. NETTOYAGE SÉCURITÉ ---
+        print("Réinitialisation des tentatives de connexion...")
+        db.query(LoginAttempt).delete()
+        
+        # --- 0.1 S'ASSURER QUE L'ADMIN EXISTE ---
+        print("Vérification de l'administrateur...")
+        admin_email = "admin@padel.com"
+        admin = db.query(User).filter(User.email == admin_email).first()
+        if not admin:
+            admin = User(
+                email=admin_email,
+                password_hash=get_password_hash("Admin@2025!"),
+                role="ADMINISTRATEUR",
+                is_active=True,
+                must_change_password=False
+            )
+            db.add(admin)
+            print("   ✅ Administrateur créé.")
+        else:
+            # S'assurer que le mot de passe est le bon au cas où il aurait été changé
+            admin.password_hash = get_password_hash("Admin@2025!")
+            admin.is_active = True
+            print("   ℹ️ Administrateur déjà présent (mot de passe réinitialisé).")
+        
+        db.commit()
+
+        # --- 1. JOUEURS ---
+        print("Vérification des joueurs...")
+        existing_players = db.query(Player).count()
+        
+        # Liste de base pour les noms d'entreprises
+        companies = ["Tech Corp", "Innov Ltd", "StartUp Z", "Big Data SA", "Cloud Net", 
+                     "Cyber Sec", "Future Soft", "Data Lab", "AI Vision", "Web Core"]
+
+        if existing_players < NB_PLAYERS:
+            print(f" ➔ Création de {NB_PLAYERS - existing_players} joueurs...")
+            for i in range(NB_PLAYERS):
+                # On crée des noms génériques pour atteindre 20 joueurs
+                company = companies[i // 2] # 2 joueurs par entreprise
+                license_num = f"L{100000 + i}"
+                
+                if not db.query(Player).filter(Player.license_number == license_num).first():
+                    player = Player(
+                        first_name=f"Joueur{i+1}", 
+                        last_name=f"Nom{i+1}", 
+                        company=company,
+                        license_number=license_num, 
+                        birth_date=date(1990, 1, 1)
+                    )
+                    db.add(player)
+            db.commit()
+        
+        all_players = db.query(Player).all()
+        print(f"   ✅ {len(all_players)} joueurs disponibles.")
+
+        # --- 2. POULES ---
+        print("Gestion des poules...")
+        pool = db.query(Pool).filter(Pool.name == "Poule A").first()
+        if not pool:
+            pool = Pool(name="Poule A")
+            db.add(pool)
+            db.commit()
+            print("   ✅ Poule A créée.")
+        else:
+            print("   ℹ️ Poule A existe déjà.")
+
+        # --- 3. ÉQUIPES ---
+        print("Gestion des équipes...")
+        all_players = db.query(Player).all()
+        teams = []
+
+        # On boucle pour créer 10 équipes (20 joueurs / 2)
+        for i in range(0, len(all_players), 2):
+            if i+1 < len(all_players):
+                p1 = all_players[i]
+                p2 = all_players[i+1]
+                
+                # Vérifier si l'équipe existe déjà
+                team = db.query(Team).filter(Team.player1_id == p1.id, Team.player2_id == p2.id).first()
+                if not team:
+                    # On n'assigne le pool_id (pool.id) que pour les 6 premières équipes (index i < 12 car i avance par 2)
+                    # Les équipes suivantes (index >= 12) auront pool_id = None (elles seront LIBRES)
+                    current_pool_id = pool.id if i < 12 else None 
+                    
+                    team = Team(
+                        company=p1.company,
+                        player1_id=p1.id,
+                        player2_id=p2.id,
+                        pool_id=current_pool_id
+                    )
+                    db.add(team)
+                    status = f"assignée à {pool.name}" if current_pool_id else "LIBRE"
+                    print(f"   ➔ Équipe créée ({status}) : {p1.company}")
+                teams.append(team)
+
+        db.commit()
+        # Recharger les équipes complètes
+        all_teams = db.query(Team).all()
+        print(f"   ✅ {len(all_teams)} équipes prêtes.")
+
+        if len(all_teams) < 2:
+            print("Pas assez d'équipes pour créer des matchs. Arrêt.")
+            return
+
+        # --- 4. ÉVÉNEMENTS & MATCHS (PASSÉS) ---
+        print("Création de l'historique (Matchs terminés)...")
+        # Créer quelques matchs terminés la semaine dernière
+        for i in range(3):
+            date_event = date.today() - timedelta(days=2 + i)
+            # Vérifier doublon éventuel
+            if not db.query(Event).filter(Event.event_date == date_event).first():
+                event = Event(event_date=date_event, event_time=f"18:00")
+                db.add(event)
+                db.commit()
+
+                # Créer 2 matchs par événement
+                m1 = Match(
+                    event_id=event.id,
+                    team1_id=all_teams[0].id,
+                    team2_id=all_teams[1].id,
+                    court_number=1,
+                    status="TERMINÉ",
+                    score_team1="6-4, 6-3",
+                    score_team2="4-6, 3-6"
+                )
+                m2 = Match(
+                    event_id=event.id,
+                    team1_id=all_teams[2].id,
+                    team2_id=all_teams[3].id,
+                    court_number=2,
+                    status="TERMINÉ",
+                    score_team1="2-6, 3-6",
+                    score_team2="6-2, 6-3"
+                )
+                db.add_all([m1, m2])
+                print(f"   ➔ Résultats ajoutés pour le {date_event}")
+        db.commit()
+
+        # --- 5. ÉVÉNEMENTS & MATCHS (FUTURS) ---
+        print("Création du planning (Matchs à venir)...")
+        for i in range(3):
+            date_event = date.today() + timedelta(days=2 + i*2)
+            if not db.query(Event).filter(Event.event_date == date_event).first():
+                event = Event(event_date=date_event, event_time="20:00")
+                db.add(event)
+                db.commit()
+
+                # Rotation des équipes
+                t1 = all_teams[(0 + i) % len(all_teams)]
+                t2 = all_teams[(2 + i) % len(all_teams)]
+
+                match = Match(
+                    event_id=event.id,
+                    team1_id=t1.id,
+                    team2_id=t2.id,
+                    court_number=3,
+                    status="A_VENIR"
+                )
+                db.add(match)
+                print(f"   ➔ Match planifié pour le {date_event}")
+        db.commit()
+
+        print("\n Base de données initialisée avec succès !")
+        print("   - Joueurs et Équipes créés")
+        print("   - Poule A créée")
+        print("   - Résultats insérés (pour tester la page Résultats/Classement)")
+        print("   - Planning rempli (pour tester la page Planning/Matchs)")
+
+    except Exception as e:
+        print(f"\n❌ Une erreur est survenue : {e}")
+        db.rollback()
+    finally:
+        db.close()
+
+if __name__ == "__main__":
+    init_db()

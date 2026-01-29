@@ -3,6 +3,7 @@ from typing import Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from app.core.config import settings
+import string, secrets
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -33,3 +34,18 @@ def decode_token(token: str) -> Optional[dict]:
         return payload
     except JWTError:
         return None
+    
+def generate_temp_password(lenght=12)->str:
+    """Génère un mot de passe temporaire conforme aux règles :
+    - Minimum 12 caractères
+    - Contient majuscules, minuscules, chiffres et caractères spéciaux
+    """
+    alphabet = string.ascii_letters + string.digits + string.punctuation
+
+    while True:
+        mdp = ''.join(secrets.choice(alphabet) for _ in range(lenght))
+        if (any(c.islower() for c in mdp)
+            and any(c.isupper() for c in mdp)
+            and any(c.isdigit() for c in mdp)
+            and any(c in string.punctuation for c in mdp)):
+            return mdp 

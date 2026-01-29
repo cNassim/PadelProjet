@@ -2,7 +2,7 @@
 # backend/app/schemas/team.py
 # ============================================
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional, List
 
 # --- Sous-objets ---
@@ -12,7 +12,7 @@ class PlayerShort(BaseModel):
     last_name: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class PoolShort(BaseModel):
@@ -20,7 +20,7 @@ class PoolShort(BaseModel):
     name: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # --- Lecture d'une équipe ---
@@ -31,8 +31,14 @@ class TeamResponse(BaseModel):
     pool: Optional[PoolShort]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
+class TeamListResponse(BaseModel):
+    teams: List[TeamResponse]
+    total: int
+    
+    # Nécessaire pour que Pydantic convertisse les objets Team de la liste
+    model_config = ConfigDict(from_attributes=True)
 
 # --- Création / modification d'une équipe ---
 class TeamCreate(BaseModel):

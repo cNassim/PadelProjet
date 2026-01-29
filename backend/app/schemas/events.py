@@ -1,37 +1,11 @@
+# ============================================
+# FICHIER : backend/app/schemas/events.py
+# ============================================
+
 from pydantic import BaseModel, field_validator, model_validator
 from datetime import date
-from typing import List, Optional
-
-# --- SCHEMAS MATCH ---
-class MatchBase(BaseModel):
-    court_number: int
-
-    @field_validator('court_number')
-    def validate_court(cls, v):
-        if not (1 <= v <= 10):
-            raise ValueError('Le numéro de piste doit être entre 1 et 10')
-        return v
-
-class MatchCreate(MatchBase):
-    team1_id: int
-    team2_id: int
-
-    @field_validator('team2_id')
-    def validate_teams_diff(cls, v, values):
-        # Note: validation basique ici, la validation complète se fait dans Event
-        return v
-
-class MatchResponse(MatchBase):
-    id: int
-    event_id: int
-    team1_id: int
-    team2_id: int
-    status: str
-    score_team1: Optional[str] = None
-    score_team2: Optional[str] = None
-
-    class Config:
-        from_attributes = True
+from typing import List, Optional 
+from app.schemas.matches import *
 
 # --- SCHEMAS EVENT ---
 class EventBase(BaseModel):
@@ -39,43 +13,40 @@ class EventBase(BaseModel):
     event_time: str  # HH:MM
 
     @field_validator('event_date')
+    @classmethod
     def validate_date(cls, v):
-        if v < date.today():
-            raise ValueError("La date de l'événement ne peut pas être dans le passé")
         return v
 
 class EventCreate(EventBase):
     matches: List[MatchCreate]
 
     @field_validator('matches')
+    @classmethod
     def validate_matches_count(cls, v):
         if not (1 <= len(v) <= 3):
             raise ValueError("Un événement doit contenir entre 1 et 3 matchs")
         return v
 
-    # --- VALIDATION COMPLEXE (Règles métier) ---
     @model_validator(mode='after')
     def validate_uniqueness(self):
-        matches = self.matches
-        
-        # 1. Pas de piste en double
-        courts = [m.court_number for m in matches]
+        #matches = self.matches
+        courts = [m.court_number for m in self.matches]
         if len(courts) != len(set(courts)):
-            raise ValueError("Impossible d'utiliser la même piste deux fois pour le même événement")
-
-        # 2. Une équipe ne joue qu'une fois
+            raise ValueError("Impossible d'utiliser la même piste deux fois")
+        
         teams_seen = set()
-        for m in matches:
+        for m in self.matches:
             if m.team1_id == m.team2_id:
                 raise ValueError("Une équipe ne peut pas jouer contre elle-même")
-            
             if m.team1_id in teams_seen or m.team2_id in teams_seen:
-                 raise ValueError(f"Une équipe joue déjà dans cet événement (ID dupliqué)")
-            
+                 raise ValueError(f"Une équipe joue déjà dans cet événement")
             teams_seen.add(m.team1_id)
             teams_seen.add(m.team2_id)
-        
         return self
+
+class EventUpdate(BaseModel):
+    event_date: Optional[date] = None
+    event_time: Optional[str] = None
 
 class EventResponse(EventBase):
     id: int
@@ -84,6 +55,5 @@ class EventResponse(EventBase):
     class Config:
         from_attributes = True
 
-# --- WRAPPER DE RÉPONSE (Le format demandé dans le CDC) ---
 class EventListResponse(BaseModel):
     events: List[EventResponse]
