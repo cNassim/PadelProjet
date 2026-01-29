@@ -19,6 +19,7 @@ from app.schemas.profile import (
 )
 from app.core.security import verify_password, get_password_hash
 from app.core.upload import save_upload_file, delete_upload_file
+from app.core.sanitization import sanitize_input
 from app.api.deps import get_current_user
 
 router = APIRouter()
@@ -116,10 +117,10 @@ def update_my_profile(
     # Mettre à jour les informations du joueur (seulement si le profil joueur existe)
     if player:
         if profile_data.first_name is not None:
-            player.first_name = profile_data.first_name
+            player.first_name = sanitize_input(profile_data.first_name)
         
         if profile_data.last_name is not None:
-            player.last_name = profile_data.last_name
+            player.last_name = sanitize_input(profile_data.last_name)
         
         if profile_data.birth_date is not None:
             player.birth_date = profile_data.birth_date
