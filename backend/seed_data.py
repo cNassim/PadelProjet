@@ -154,7 +154,7 @@ def init_db():
                 team1_id=all_teams[0].id,
                 team2_id=all_teams[1].id,
                 court_number=1,
-                status="TERMINE", # <--- CORRECTION ICI (PAS D'ACCENT)
+                status="TERMINE", 
                 score_team1="6-4, 6-3",
                 score_team2="4-6, 3-6"
             )
