@@ -124,6 +124,31 @@ describe('Gestion des Poules', () => {
       cy.get('.bg-red-50').should('contain', 'Impossible de modifier la poule')
     })
 
+    it('Affiche une erreur si une équipe est déjà assignée à une autre poule', () => {
+      cy.intercept('POST', '**/api/v1/pools*', {
+        statusCode: 400,
+        body: { detail: "L'équipe 'AI Labs' est déjà assignée à une autre poule." }
+      }).as('postError')
+
+      cy.contains('button', 'Nouvelle Poule').click()
+      
+      // Utilisation du bon placeholder (celui de ton code : "Ex: Poule A")
+      cy.get('input[placeholder="Ex: Poule A"]').first().type('Poule Conflit')
+      
+      // Cocher les 6 premières équipes
+      cy.get('input[type="checkbox"]').each(($el, index) => {
+        if (index < 6) {
+          cy.wrap($el).check()
+        }
+      })
+      
+      cy.get('button[type="submit"]').click()
+      
+      cy.wait('@postError')
+      
+      // Vérification de l'affichage du message d'erreur rouge
+      cy.get('.bg-red-50').should('contain', "L'équipe 'AI Labs' est déjà assignée")
+    })
     // POULE EXISTANTE
     it('Peut supprimer une poule existante', () => {
       cy.intercept('DELETE', `**/api/v1/pools/*`, { statusCode: 204 }).as('deleteRequest')

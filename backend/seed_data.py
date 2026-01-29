@@ -120,8 +120,10 @@ def init_db():
             
             if not existing_team:
                 pool_id = pool.id if i < 12 else None
+                team_idx = (i // 2) + 1
+                unique_company_name = f"{p1.company} Team {team_idx}"
                 team = Team(
-                    company=p1.company, 
+                    company=unique_company_name, 
                     player1_id=p1.id, 
                     player2_id=p2.id, 
                     pool_id=pool_id
