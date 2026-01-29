@@ -72,7 +72,7 @@ class Team(Base):
     __tablename__ = "teams"
 
     id = Column(Integer, primary_key=True, index=True)
-    company = Column(String, nullable=False)
+    company = Column(String, unique=True, nullable=False)
     player1_id = Column(Integer, ForeignKey("players.id", ondelete="CASCADE"), nullable=False)
     player2_id = Column(Integer, ForeignKey("players.id", ondelete="CASCADE"), nullable=False)
     pool_id = Column(Integer, ForeignKey("pools.id", ondelete="SET NULL"), nullable=True)

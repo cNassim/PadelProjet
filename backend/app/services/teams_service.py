@@ -43,6 +43,11 @@ class TeamService:
         if player1.company != player2.company:
             raise HTTPException(status_code=400, detail="Même entreprise requise.")
 
+        # Vérification de l'unicité du nom d'équipe
+        existing_team_name = self.db.query(Team).filter(Team.company == team_data.company).first()
+        if existing_team_name:
+            raise HTTPException(status_code=400, detail=f"Une équipe avec le nom '{team_data.company}' existe déjà.")
+
         # Vérification d'existence dans une autre équipe
         for p_id in [player1.id, player2.id]:
             existing = self.db.query(Team).filter(
@@ -75,6 +80,14 @@ class TeamService:
         
         if has_finished_matches:
             raise HTTPException(status_code=400, detail="Impossible de modifier une équipe ayant déjà joué.")
+
+        # Vérification de l'unicité du nom d'équipe (exclure l'équipe actuelle)
+        existing_team_name = self.db.query(Team).filter(
+            Team.company == team_data.company,
+            Team.id != team_id
+        ).first()
+        if existing_team_name:
+            raise HTTPException(status_code=400, detail=f"Une équipe avec le nom '{team_data.company}' existe déjà.")
 
         team.company = team_data.company
         team.player1_id = team_data.player1_id
