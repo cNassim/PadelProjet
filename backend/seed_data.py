@@ -140,7 +140,7 @@ def init_db():
                     team1_id=all_teams[0].id,
                     team2_id=all_teams[1].id,
                     court_number=1,
-                    status="TERMINÉ",
+                    status="TERMINE",
                     score_team1="6-4, 6-3",
                     score_team2="4-6, 3-6"
                 )
@@ -149,7 +149,7 @@ def init_db():
                     team1_id=all_teams[2].id,
                     team2_id=all_teams[3].id,
                     court_number=2,
-                    status="TERMINÉ",
+                    status="TERMINE",
                     score_team1="2-6, 3-6",
                     score_team2="6-2, 6-3"
                 )
