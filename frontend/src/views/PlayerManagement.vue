@@ -315,7 +315,7 @@ const handleError = (err) => {
           license_number: 'Licence',
           birth_date: 'Date de naissance'
         }
-        let msg = e.msg.replace('Value error, ', '');
+        let msg = e.msg.replace('Erreur, ', '');
         if (msg.includes("at least 2 characters")) msg = "doit contenir au moins 2 caractères.";
         const fieldName = fieldMap[e.loc[1]] || e.loc[1]
         return `${fieldName} : ${msg}`
