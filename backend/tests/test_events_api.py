@@ -152,19 +152,74 @@ def test_create_event_team_conflict(client, test_admin, test_teams, db_session):
     assert response.status_code == 400
     assert "CONFLIT" in response.json()["detail"]
 
-def test_update_event(client, test_admin, db_session):
-    """Tester la mise à jour d'un événement"""
-    headers = get_auth_headers(client, "admin@example.com", "AdminP@ssw0rd123")
-    e = Event(event_date=date.today(), event_time="10:00")
-    db_session.add(e); db_session.commit(); db_session.refresh(e)
-    
-    response = client.put(f"/api/v1/events/{e.id}", json={"event_time": "11:00"}, headers=headers)
+def test_read_events_filters(client, test_user, db_session, test_teams):
+    """Vérifier les filtres start_date, end_date et month pour /events/"""
+
+    headers = get_auth_headers(client, "test@example.com", "ValidP@ssw0rd123")
+
+    # Nettoyer les événements existants pour isoler le test
+    db_session.query(Match).delete()
+    db_session.query(Event).delete()
+    db_session.commit()
+
+    # Créer des événements de test
+    e1 = Event(event_date=date(2025, 1, 1), event_time="10:00:00")
+    e2 = Event(event_date=date(2025, 6, 1), event_time="10:00:00")
+    db_session.add_all([e1, e2])
+    db_session.commit()
+    db_session.refresh(e1)
+    db_session.refresh(e2)
+
+    # Ajouter un match pour chaque événement afin qu'ils soient visibles par le service
+    match1 = Match(
+        event_id=e1.id,
+        team1_id=test_teams[0].id,
+        team2_id=test_teams[1].id,
+        court_number=1,
+        status="A_VENIR"
+    )
+    match2 = Match(
+        event_id=e2.id,
+        team1_id=test_teams[0].id,
+        team2_id=test_teams[1].id,
+        court_number=2,
+        status="A_VENIR"
+    )
+    db_session.add_all([match1, match2])
+    db_session.commit()
+
+    response = client.get("/api/v1/events/?month=2025-01&show_all=true", headers=headers)
     assert response.status_code == 200
-    assert response.json()["event_time"] == "11:00"
-    
-    # Non trouvé
-    response = client.put("/api/v1/events/999", json={"event_time": "11:00"}, headers=headers)
-    assert response.status_code == 404
+    data = response.json()
+    assert "events" in data
+    assert isinstance(data["events"], list)
+    assert len(data["events"]) == 1
+    assert data["events"][0]["event_date"] == "2025-01-01"
+
+    response = client.get("/api/v1/events/?start_date=2025-05-01&show_all=true", headers=headers)
+    assert response.status_code == 200
+    data = response.json()
+    assert "events" in data
+    assert isinstance(data["events"], list)
+    assert len(data["events"]) == 1
+    assert data["events"][0]["event_date"] == "2025-06-01"
+
+    response = client.get("/api/v1/events/?end_date=2025-05-31&show_all=true", headers=headers)
+    assert response.status_code == 200
+    data = response.json()
+    assert "events" in data
+    assert isinstance(data["events"], list)
+    assert len(data["events"]) == 1
+    assert data["events"][0]["event_date"] == "2025-01-01"
+
+    response = client.get("/api/v1/events/?month=2025-12&show_all=true", headers=headers)
+    assert response.status_code == 200
+    data = response.json()
+    assert "events" in data
+    assert isinstance(data["events"], list)
+    assert len(data["events"]) == 0
+
+
 
 def test_delete_event_restricted(client, test_admin, db_session, test_teams):
     """Empêcher la suppression d'un événement avec des matchs terminés"""

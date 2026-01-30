@@ -61,10 +61,24 @@
         >
       </div>
 
-      <div>
+      <!--<div>
         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Photo URL</label>
         <input v-model="newPlayer.photo_url" type="text"  class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
-      </div>
+      </div>-->
+      <div v-if="newPlayer.photo_url" class="w-10 h-10 rounded-full overflow-hidden border border-gray-200 bg-gray-50">
+  <img :src="newPlayer.photo_url" class="w-full h-full object-cover">
+</div>
+
+<input type="file" ref="fileInput" @change="handleFileUpload" class="hidden" accept="image/*">
+
+<button 
+  type="button" 
+  @click="$refs.fileInput.click()" 
+  class="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-xl text-xs font-bold hover:bg-gray-200"
+>
+  {{ newPlayer.photo_url ? '📷 Changer la photo' : '📁 Choisir une photo' }}
+</button>
+
 
 
       <div>
@@ -151,6 +165,8 @@ const showModal = ref(false)
 const isEditing = ref(false)
 const errorMessage = ref(null)
 const createLoading = ref(false)
+const uploadingPhoto = ref(false)
+const fileInput = ref(null)
 
 const today = new Date().toISOString().split('T')[0];
 
@@ -280,25 +296,6 @@ const handleUpdatePlayer = async () => {
   }
 }
 
-/* le cas ou joueur ets dans une team
-// --- LOGIQUE : SUPPRIMER ---
-const handleDeletePlayer = async (player) => {
-  if (player.has_active_team) {
-    alert("Impossible de supprimer : le joueur est dans une équipe active.")
-    return
-  }
-  
-  if (confirm("Attention, cette action est irréversible. Voulez-vous vraiment supprimer ce joueur ?")) {
-    try {
-      await playerAPI.delete(player.id)
-      fetchAllPlayers()
-    } catch (err) {
-      alert(err.response?.data?.detail || "Erreur lors de la suppression")
-    }
-  }
-}
-  */
-
 const errorMessages = ref([]) // On passe à un tableau 
 
 const handleError = (err) => {
@@ -318,7 +315,7 @@ const handleError = (err) => {
           license_number: 'Licence',
           birth_date: 'Date de naissance'
         }
-        let msg = e.msg.replace('Value error, ', '');
+        let msg = e.msg.replace('Erreur, ', '');
         if (msg.includes("at least 2 characters")) msg = "doit contenir au moins 2 caractères.";
         const fieldName = fieldMap[e.loc[1]] || e.loc[1]
         return `${fieldName} : ${msg}`
@@ -329,5 +326,22 @@ const handleError = (err) => {
   } else {
     errorMessages.value = ["Une erreur inattendue est survenue."]
   }
+}
+const handleFileUpload = (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+
+  // Limite de sécurité (le base64 alourdit la DB, évite les fichiers de + de 1Mo)
+  if (file.size > 1024 * 1024) {
+    alert("Photo trop lourde pour la base de données (max 1Mo)")
+    return
+  }
+
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    // Stocke la chaîne "data:image/jpeg;base64,..."
+    newPlayer.value.photo_url = e.target.result
+  }
+  reader.readAsDataURL(file)
 }
 </script>

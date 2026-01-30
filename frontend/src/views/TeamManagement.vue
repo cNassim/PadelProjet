@@ -337,7 +337,7 @@ const deleteTeam = async (id) => {
     await loadTeams()
   } catch (err) {
     console.error('Erreur lors de la suppression:', err)
-    alert('Erreur lors de la suppression de l\'équipe')
+    alert('Erreur: cette équipe a déjà joué un match.')
   }
 }
 

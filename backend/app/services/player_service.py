@@ -16,7 +16,7 @@ def validate_unique_fields(db: Session, licence: str, player_id: int = None):
 
 # Création d'un joueur seulement sans email
 
-def create_player_service(payload: PlayerCreate, db: Session)->Player:
+def create_player_service(payload: PlayerCreate, db: Session)->PlayerCreateResponse:
 
     validate_unique_fields(db, licence=payload.license_number)
     new_player = Player(
@@ -53,12 +53,11 @@ def update_player_service(player_id: int, payload: PlayerUpdate, db: Session) ->
 
     data = payload.model_dump(exclude_unset=True)
 
-    FORBIDDEN_FIELDS = {"license_number"}  
+    FORBIDDEN_FIELDS = {"license_number", "id"}  
 
     for field, value in data.items():
-        if field in FORBIDDEN_FIELDS:
-            continue  
-        setattr(player, field, value)
+        if field not in FORBIDDEN_FIELDS:  
+            setattr(player, field, value)
 
     db.commit()
     db.refresh(player)

@@ -152,9 +152,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed , watch} from 'vue'
 import { adminAPI } from '../services/admin'
-import PlayerManagement from './PlayerManagement.vue' // Ajustez le chemin
+import PlayerManagement from './PlayerManagement.vue' 
 
 // États de navigation
 const mainTab = ref('players')
@@ -164,11 +164,21 @@ const activeTab = ref('create')
 const searchQuery = ref('')
 
 // Listes de données
-const allPlayers = ref([]) // 2. Initialisé à vide pour accueillir les données de la BD
+const allPlayers = ref([]) 
 const playersWithoutAccount = ref([])
 const users = ref([])
 const loadingPlayers = ref(false)
 const loadingUsers = ref(false)
+
+watch(mainTab, (newTab) => {
+  if (newTab === 'accounts') {
+    loadPlayersWithoutAccount()
+    // Si tu es sur le sous-onglet reset, recharge aussi les users
+    if (activeTab.value === 'reset') {
+      loadUsers()
+    }
+  }
+})
 
 // Filtrage dynamique des joueurs
 const filteredPlayers = computed(() => {
@@ -229,8 +239,13 @@ const switchTab = (tab) => {
   createError.value = null
   resetSuccess.value = false
   resetError.value = null
-  if (tab === 'create' && playersWithoutAccount.value.length === 0) loadPlayersWithoutAccount()
-  else if (tab === 'reset' && users.value.length === 0) loadUsers()
+
+  // On recharge systématiquement pour avoir les dernières données de la DB
+  if (tab === 'create') {
+    loadPlayersWithoutAccount()
+  } else if (tab === 'reset') {
+    loadUsers()
+  }
 }
 
 /**

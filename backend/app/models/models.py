@@ -2,7 +2,7 @@
 # FICHIER : backend/app/models/models.py
 # ============================================
 
-from sqlalchemy import Boolean, Column, Integer, String, DateTime, ForeignKey, TIMESTAMP, CheckConstraint
+from sqlalchemy import Boolean, Column, Text,Integer, String, DateTime, ForeignKey, TIMESTAMP, CheckConstraint
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.database import Base
@@ -40,7 +40,8 @@ class Player(Base):
     company = Column(String, index=True, nullable=False)
     license_number = Column(String, index=True, unique=True)
     birth_date = Column(DateTime)
-    photo_url = Column(String)
+    #photo_url = Column(String)
+    photo_url = Column(Text, nullable=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), unique=True)
 
     created_at = Column(TIMESTAMP, server_default=func.current_timestamp())
