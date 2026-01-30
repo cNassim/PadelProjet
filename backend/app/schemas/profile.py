@@ -148,7 +148,13 @@ class ChangePasswordRequest(BaseModel):
             raise ValueError("Le mot de passe doit contenir au moins un caractère spécial (!@#$%^&*(),.?\":{}|<>)")
         
         return v
-
+@field_validator("confirm_password")
+@classmethod
+def passwords_match(cls, v: str, info):
+    new_password = info.data.get("new_password")
+    if new_password and v != new_password:
+        raise ValueError("Les mots de passe ne correspondent pas")
+    return v
 
 class ChangePasswordResponse(BaseModel):
     """Réponse après changement de mot de passe"""

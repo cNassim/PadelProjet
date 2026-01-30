@@ -179,8 +179,8 @@ def test_delete_match_cascade_event_if_last(db_session, test_admin):
     service = MatchService(db_session)
     
     service.delete_match(match.id)
-    assert db_session.query(Match).get(match.id) is None
-    assert db_session.query(Event).get(event_id) is None
+    assert db_session.get(Match,match.id) is None
+    assert db_session.get(Event,event_id) is None
 
 def test_delete_match_keep_event_if_multiple(db_session, test_admin):
     # Teste la branche 'else' (Plusieurs matchs sur un Event)
@@ -194,9 +194,9 @@ def test_delete_match_keep_event_if_multiple(db_session, test_admin):
     service = MatchService(db_session)
     service.delete_match(m1.id)
 
-    assert db_session.query(Match).get(m1.id) is None
-    assert db_session.query(Match).get(m2.id) is not None
-    assert db_session.query(Event).get(event_id) is not None
+    assert db_session.get(Match,m1.id) is None
+    assert db_session.get(Match,m2.id) is not None
+    assert db_session.get(Event,event_id) is not None
 
 
 # TESTS DE SCHÉMA (Pydantic)

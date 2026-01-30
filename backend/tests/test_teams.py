@@ -104,9 +104,12 @@ def test_create_team_player_already_taken(client, db_session, test_admin):
         "company": "Google", "player1_id": p1.id, "player2_id": p2.id, "pool_id": None
     })
 
-    # Equipe 2 (Invalide car p1 est déjà pris)
+    # Equipe 2 (Invalide car p1 est déjà pris), nom différent pour éviter conflit sur le nom
     response = client.post("/api/v1/teams/", json={
-        "company": "Google", "player1_id": p1.id, "player2_id": p3.id, "pool_id": None
+        "company": "Google2",  
+        "player1_id": p1.id,   
+        "player2_id": p3.id,
+        "pool_id": None
     })
 
     assert response.status_code == 400

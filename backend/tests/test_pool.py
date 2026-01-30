@@ -14,6 +14,7 @@
 import pytest
 from fastapi import HTTPException
 from app.services.pools_service import PoolService
+from app.services.player_service import create_player_service
 from app.schemas.pools import PoolCreate
 from app.models.models import Pool, Team, Player, Match, Event
 from datetime import datetime
@@ -127,6 +128,33 @@ def test_update_pool_duplicate_name(pool_service, create_mock_teams, db_session)
     
     assert exc.value.status_code == 400
 
+def test_create_pool_with_team_already_in_another_pool(pool_service, create_mock_teams, db_session):
+    """
+    Vérifie qu'on ne peut pas créer une nouvelle pool
+    avec des équipes déjà assignées à une autre pool
+    (test unitaire directement sur le service).
+    """
+    from fastapi import HTTPException
+    from app.schemas.pools import PoolCreate
+
+    # --- Créer la première pool avec team1 et team2 ---
+    pool1_data = PoolCreate(name="Pool 1", team_ids=[create_mock_teams[0], create_mock_teams[1],
+                                                     create_mock_teams[2], create_mock_teams[3],
+                                                     create_mock_teams[4], create_mock_teams[5]])
+    pool_service.create_pool(pool1_data)
+
+    # --- Tenter de créer une nouvelle pool avec la même équipe (team1 déjà assignée) ---
+    pool2_data = PoolCreate(name="Pool 2", team_ids=[create_mock_teams[0], create_mock_teams[1],
+                                                     create_mock_teams[2], create_mock_teams[3],
+                                                     create_mock_teams[4], create_mock_teams[5]])
+    with pytest.raises(HTTPException) as exc:
+        pool_service.create_pool(pool2_data)
+
+    # Vérifications
+    assert exc.value.status_code == 400
+    assert "déjà assignée à la poule" in exc.value.detail
+
+
 def test_update_pool_forbidden_if_match_finished(pool_service, create_mock_teams, db_session):
     """Sécurité : Bloque l'update si un match de la poule est terminé."""
     pool = pool_service.create_pool(PoolCreate(name="MatchTest", team_ids=create_mock_teams))
@@ -165,7 +193,7 @@ def test_update_pool_unassign_teams(pool_service, create_mock_teams, db_session)
     db_session.expire_all()
     
     # Vérification que l'ancienne équipe est libérée
-    old_team = db_session.query(Team).get(create_mock_teams[0])
+    old_team = db_session.get(Team,create_mock_teams[0])
     assert old_team.pool_id is None
 
 def test_update_pool_not_found_coverage(pool_service, create_mock_teams):
@@ -184,10 +212,10 @@ def test_delete_pool_success(pool_service, create_mock_teams, db_session):
     pool_id = pool.id
     
     pool_service.delete_pool(pool_id)
-    assert db_session.query(Pool).get(pool_id) is None
+    assert db_session.get(Pool,pool_id) is None
     
     # Vérifier que les équipes sont détachées et non supprimées
-    team = db_session.query(Team).get(create_mock_teams[0])
+    team = db_session.get(Team,create_mock_teams[0])
     assert team.pool_id is None
 
 def test_delete_pool_not_found(pool_service):

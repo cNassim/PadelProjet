@@ -1,5 +1,5 @@
 from datetime import date
-from pydantic import BaseModel, validator, Field
+from pydantic import BaseModel, validator, Field, field_validator
 import re
 
 class PlayerCreate(BaseModel):
@@ -11,17 +11,20 @@ class PlayerCreate(BaseModel):
     birth_date: date 
     photo_url: str | None = None
 
-    @validator('first_name', 'last_name')
+    @field_validator('first_name', 'last_name')
+    @classmethod
     def check_names(cls, v):
         if not re.match(r"^[A-Za-zÀ-ÖØ-öø-ÿ' -]+$", v):
             raise ValueError("Le nom et prenom doivent contenir uniquement des lettres et des espaces.")
         return v
-    @validator("license_number")
+    @field_validator("license_number")
+    @classmethod
     def validate_license_number(cls, v):
         if not re.match(r"^L\d{6}$", v):
             raise ValueError("Le numéro de licence doit commencer par 'L' suivi de 6 chiffres (ex: L123456).")
         return v
-    @validator("birth_date")
+    @field_validator("birth_date")
+    @classmethod
     def check_birth_date(cls, v): 
         if v > date.today():
             raise ValueError("La date de naissance ne peut pas être dans le futur")
@@ -34,7 +37,8 @@ class PlayerUpdate(BaseModel):
     birth_date: date | None = None
     photo_url: str | None = None
 
-    @validator('first_name', 'last_name')
+    @field_validator('first_name', 'last_name')
+    @classmethod
     def validate_names(cls, v):
         if v is None:
             return v

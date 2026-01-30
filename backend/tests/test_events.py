@@ -95,6 +95,54 @@ def test_create_event_conflict_external(event_service, db_session, create_mock_d
     assert exc.value.status_code == 400
     assert "réservée" in exc.value.detail
 
+def test_create_event_team_conflict(db_session):
+    '''Test qu'une erreur 400 est levée si une équipe joue déjà 
+    un autre match sur le même créneau (Date + Heure).'''
+    
+    service = EventService(db_session)
+
+    # Créer deux équipes en base
+    team_a = Team(company="Team A")
+    team_b = Team(company="Team B")
+    team_c = Team(company="Team C")
+    db_session.add_all([team_a, team_b, team_c])
+    db_session.commit()
+
+    # Créer un événement existant à 10:00 avec Team A
+    existing_event = Event(event_date=date(2025, 5, 20), event_time="10:00")
+    db_session.add(existing_event)
+    db_session.flush()
+    
+    existing_match = Match(
+        event_id=existing_event.id,
+        team1_id=team_a.id,
+        team2_id=team_b.id,
+        court_number=1,
+        status="A_VENIR"
+    )
+    db_session.add(existing_match)
+    db_session.commit()
+
+    # Tentative de créer un NOUVEL événement au même créneau impliquant Team A
+    new_event_data = EventCreate(
+        event_date=date(2025, 5, 20),
+        event_time="10:00",
+        matches=[
+            MatchCreate(
+                team1_id=team_a.id, # <-- CONFLIT : Team A est déjà occupée
+                team2_id=team_c.id,
+                court_number=2
+            )
+        ]
+    )
+
+    # Vérification que l'exception HTTPException 400 est bien levée
+    with pytest.raises(HTTPException) as exc_info:
+        service.create_event(new_event_data)
+    
+    assert exc_info.value.status_code == 400
+    assert "CONFLIT : Une équipe joue déjà un autre match" in exc_info.value.detail
+
 def test_create_event_team_conflict(event_service, create_mock_data, db_session):
     """Ligne 55 : Une équipe joue déjà ailleurs sur le même créneau"""
     t1_id, t2_id = create_mock_data

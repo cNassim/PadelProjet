@@ -67,21 +67,29 @@ describe('Gestion du Planning', () => {
       cy.get('.bg-indigo-100').should('have.length.at.least', 1);
     });
 
-    it('Ouvre les détails d\'un jour contenant des événements', () => {
-      // On attend que les badges indigo (événements) soient chargés
-      cy.get('.bg-indigo-100', { timeout: 10000 }).first().click({ force: true });
-      
-      // La modale de détails (.fixed.inset-0)
+    it('Affiche tous les événements après avoir coché "Voir tous les événements"', () => {
+      // Stub de l'API
+      cy.intercept('GET', '/api/events*', { fixture: 'events.json' }).as('getEvents');
+
+      cy.visit('/planning');
+
+      // Attendre que le loader disparaisse
+      cy.get('.inline-block.animate-spin', { timeout: 10000 }).should('not.exist');
+
+      // Cocher la checkbox pour voir tous les événements
+      cy.get('input[type="checkbox"]').check({ force: true });
+
+      // Attendre que les badges indigo apparaissent
+      cy.get('.bg-indigo-100', { timeout: 10000 }).should('have.length.greaterThan', 0);
+
+      // Cliquer sur le premier événement
+      cy.get('.bg-indigo-100').first().click({ force: true });
+
+      // Vérifier la modale
       cy.get('.fixed.inset-0').should('be.visible').within(() => {
-        // Vérifie qu'une heure est affichée
-        // Le format \d{2}:\d{2} cherche 2 chiffres, deux points, 2 chiffres
-        cy.contains(/\d{2}:\d{2}/).should('be.visible');
-        
-        // Vérifie la présence du mot "Piste" (générique)
-        cy.contains(/Piste \d+/).should('be.visible');
-        
-        // Vérifie qu'il y a un séparateur de match "vs"
-        cy.contains(/vs/i).should('be.visible');
+        cy.contains(/\d{2}:\d{2}/).should('be.visible'); // Heure
+        cy.contains(/Piste \d+/).should('be.visible');    // Numéro de piste
+        cy.contains(/vs/i).should('be.visible');         // "vs"
 
         // Fermeture
         cy.contains('button', 'Fermer').click();
@@ -89,6 +97,7 @@ describe('Gestion du Planning', () => {
 
       cy.get('.fixed.inset-0').should('not.exist');
     });
+
   });
 
   // Vue Admin
