@@ -1,0 +1,16 @@
+{
+  "user": {
+    "id": 1,
+    "email": "test@techcorp.com",
+    "role": "JOUEUR"
+  },
+  "player": {
+    "id": 1,
+    "first_name": "Jean",
+    "last_name": "Dupont",
+    "company": "TechCorp",
+    "license_number": "L123456",
+    "birth_date": "1995-06-15",
+    "photo_url": null
+  }
+}

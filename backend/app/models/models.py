@@ -2,11 +2,11 @@
 # FICHIER : backend/app/models/models.py
 # ============================================
 
-from sqlalchemy import Boolean, Column, Integer, String, DateTime, ForeignKey, TIMESTAMP, CheckConstraint
+from sqlalchemy import Boolean, Column, Text,Integer, String, DateTime, ForeignKey, TIMESTAMP, CheckConstraint
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.database import Base
-from sqlalchemy.orm import relationship
+
 
 class User(Base):
     __tablename__ = "users"
@@ -40,7 +40,8 @@ class Player(Base):
     company = Column(String, index=True, nullable=False)
     license_number = Column(String, index=True, unique=True)
     birth_date = Column(DateTime)
-    photo_url = Column(String)
+    #photo_url = Column(String)
+    photo_url = Column(Text, nullable=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), unique=True)
 
     created_at = Column(TIMESTAMP, server_default=func.current_timestamp())
@@ -72,7 +73,7 @@ class Team(Base):
     __tablename__ = "teams"
 
     id = Column(Integer, primary_key=True, index=True)
-    company = Column(String, nullable=False)
+    company = Column(String, unique=True, nullable=False)
     player1_id = Column(Integer, ForeignKey("players.id", ondelete="CASCADE"), nullable=False)
     player2_id = Column(Integer, ForeignKey("players.id", ondelete="CASCADE"), nullable=False)
     pool_id = Column(Integer, ForeignKey("pools.id", ondelete="SET NULL"), nullable=True)

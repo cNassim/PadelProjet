@@ -12,6 +12,7 @@ import MatchesPage from '../views/MatchesPage.vue'
 import ResultsPage from '../views/ResultsPage.vue'
 import PlanningPage from '../views/PlanningPage.vue'
 import TeamManagement from '../views/TeamManagement.vue'
+import PoolsPage from '../views/PoolsPage.vue'
 
 const routes = [
   {
@@ -59,8 +60,15 @@ const routes = [
     name: 'teams',
     component: TeamManagement,
     meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/pools',
+    name: 'pools',
+    component: PoolsPage,
+    meta: { requiresAuth: true } // Accessible aux joueurs et admins
   }
 ]
+
 
 const router = createRouter({
   history: createWebHistory(),

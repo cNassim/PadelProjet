@@ -1,0 +1,53 @@
+{
+  "events": [
+    {
+      "id": 1,
+      "event_date": "2026-01-20",
+      "event_time": "18:00:00",
+      "matches": [
+        {
+          "id": 101,
+          "court_number": 1,
+          "status": "A_VENIR",
+          "team1": { "id": 1, "company": "TechCorp" },
+          "team2": { "id": 2, "company": "SoftInc" }
+        },
+        {
+          "id": 102,
+          "court_number": 2,
+          "status": "A_VENIR",
+          "team1": { "id": 3, "company": "DataLab" },
+          "team2": { "id": 4, "company": "CyberSec" }
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "event_date": "2026-01-27",
+      "event_time": "14:00:00",
+      "matches": [
+        {
+          "id": 103,
+          "court_number": 3,
+          "status": "TERMINE",
+          "team1": { "id": 5, "company": "PadelMaster" },
+          "team2": { "id": 6, "company": "GreenIT" }
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "event_date": "2026-02-05",
+      "event_time": "20:00:00",
+      "matches": [
+        {
+          "id": 104,
+          "court_number": 1,
+          "status": "A_VENIR",
+          "team1": { "id": 1, "company": "TechCorp" },
+          "team2": { "id": 3, "company": "DataLab" }
+        }
+      ]
+    }
+  ]
+}
