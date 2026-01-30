@@ -113,7 +113,7 @@ def test_create_team_player_already_taken(client, db_session, test_admin):
     })
 
     assert response.status_code == 400
-    assert "existe déjà" in response.json()["detail"]
+    assert "déjà en équipe" in response.json()["detail"]
 
     app.dependency_overrides = {}
 
