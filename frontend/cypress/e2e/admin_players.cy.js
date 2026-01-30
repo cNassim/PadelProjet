@@ -56,9 +56,9 @@ describe('Gestion des Joueurs - Admin', () => {
         // Attendre que le chargement soit fini (évite de matcher '10 joueurs' avec '0 joueurs')
         cy.get('.text-gray-500.font-medium').should('not.have.text', 'Total: 0 joueurs')
 
-        cy.get('input[placeholder="Rechercher..."]').type('Marie')
+        cy.get('input[placeholder="Rechercher..."]').type('Nom1')
         cy.get('tbody tr').should('have.length.at.least', 1).each(($tr) => {
-            cy.wrap($tr).should('contain', 'Marie')
+            cy.wrap($tr).should('contain', 'Nom1')
         })
     })
 })
