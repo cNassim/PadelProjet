@@ -1,7 +1,6 @@
 <template>
   <div class="min-h-screen bg-gray-50 py-8">
     <div class="container mx-auto px-4 max-w-7xl">
-      <!-- Header -->
       <div class="bg-white rounded-2xl shadow-lg border border-gray-100 mb-6">
         <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between p-6 border-b">
           <div>
@@ -10,6 +9,7 @@
           </div>
           <button
             @click="openCreateModal"
+            data-cy="btn-create-team"
             class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl shadow-md hover:bg-blue-700 transition-all hover:shadow-lg"
           >
             <span class="text-xl">➕</span>
@@ -18,13 +18,11 @@
         </div>
       </div>
 
-      <!-- Loading State -->
       <div v-if="loading" class="bg-white rounded-2xl shadow-lg p-12 text-center">
         <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
         <p class="mt-4 text-gray-600">Chargement des équipes...</p>
       </div>
 
-      <!-- Teams Table -->
       <div v-else class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
         <div v-if="teams.length === 0" class="p-12 text-center">
           <div class="text-6xl mb-4">🗂️</div>
@@ -61,13 +59,13 @@
                 <td class="px-6 py-4">
                   <div class="flex flex-wrap gap-1">
                     <span
-                      v-for="playerId in (team.player_ids || [])"
-                      :key="playerId"
+                      v-for="player in (team.players || [])"
+                      :key="player.id"
                       class="px-2 py-1 text-xs rounded-full bg-blue-50 text-blue-700 border border-blue-100"
                     >
-                      {{ getPlayerName(playerId) }}
+                      {{ player.first_name }} {{ player.last_name }}
                     </span>
-                    <span v-if="(team.player_ids || []).length === 0" class="text-gray-400 text-sm">
+                    <span v-if="(team.players || []).length === 0" class="text-gray-400 text-sm">
                       Aucun joueur
                     </span>
                   </div>
@@ -94,14 +92,12 @@
         </div>
       </div>
 
-      <!-- Modal -->
       <div
         v-if="showModal"
         class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
         @click.self="closeModal"
       >
         <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-          <!-- Modal Header -->
           <div class="flex items-center justify-between p-6 border-b">
             <h2 class="text-2xl font-bold text-gray-900">
               {{ editingTeam ? 'Modifier l\'équipe' : 'Créer une équipe' }}
@@ -114,9 +110,7 @@
             </button>
           </div>
 
-          <!-- Modal Body -->
           <form @submit.prevent="saveTeam" class="p-6 space-y-6">
-            <!-- Error Message -->
             <div
               v-if="error"
               class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg"
@@ -124,13 +118,13 @@
               {{ error }}
             </div>
 
-            <!-- Company -->
             <div>
               <label class="block text-sm font-semibold text-gray-700 mb-2">
                 Company <span class="text-red-500">*</span>
               </label>
               <input
                 v-model="form.company"
+                data-cy="input-company"
                 type="text"
                 required
                 class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
@@ -138,7 +132,6 @@
               />
             </div>
 
-            <!-- Pool -->
             <div>
               <label class="block text-sm font-semibold text-gray-700 mb-2">
                 Pool
@@ -154,14 +147,13 @@
               </select>
             </div>
 
-            <!-- Players -->
             <div>
               <label class="block text-sm font-semibold text-gray-700 mb-2">
                 Joueurs
               </label>
               <div class="border border-gray-300 rounded-lg p-4 max-h-48 overflow-y-auto space-y-2">
                 <label
-                  v-for="player in players"
+                  v-for="(player, index) in players"
                   :key="player.id"
                   class="flex items-center gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer"
                 >
@@ -169,6 +161,7 @@
                     type="checkbox"
                     :value="player.id"
                     v-model="form.player_ids"
+                    :data-cy="'checkbox-player-' + index"
                     class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                   />
                   <span class="text-sm text-gray-700">
@@ -181,7 +174,6 @@
               </div>
             </div>
 
-            <!-- Actions -->
             <div class="flex items-center justify-end gap-3 pt-4 border-t">
               <button
                 type="button"
@@ -192,6 +184,7 @@
               </button>
               <button
                 type="submit"
+                data-cy="btn-save-team"
                 :disabled="saving"
                 class="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -288,7 +281,8 @@ const openEditModal = (team) => {
   form.value = {
     company: team.company || '',
     pool_id: team.pool_id || null,
-    player_ids: team.player_ids || []
+    // Extraire les IDs des joueurs depuis le tableau d'objets players
+    player_ids: (team.players || []).map(p => p.id)
   }
   error.value = null
   showModal.value = true
@@ -305,10 +299,25 @@ const saveTeam = async () => {
   error.value = null
 
   try {
+    // Validation : exactement 2 joueurs requis
+    if (!form.value.player_ids || form.value.player_ids.length !== 2) {
+      error.value = 'Vous devez sélectionner exactement 2 joueurs pour former une équipe'
+      saving.value = false
+      return
+    }
+
+    // Transformer player_ids en player1_id et player2_id pour le backend
+    const teamData = {
+      company: form.value.company,
+      pool_id: form.value.pool_id,
+      player1_id: form.value.player_ids[0],
+      player2_id: form.value.player_ids[1]
+    }
+
     if (editingTeam.value) {
-      await teamAPI.update(editingTeam.value.id, form.value)
+      await teamAPI.update(editingTeam.value.id, teamData)
     } else {
-      await teamAPI.create(form.value)
+      await teamAPI.create(teamData)
     }
     await loadTeams()
     closeModal()
@@ -328,7 +337,7 @@ const deleteTeam = async (id) => {
     await loadTeams()
   } catch (err) {
     console.error('Erreur lors de la suppression:', err)
-    alert('Erreur lors de la suppression de l\'équipe')
+    alert('Erreur: cette équipe a déjà joué un match.')
   }
 }
 

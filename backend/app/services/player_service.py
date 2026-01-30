@@ -5,14 +5,8 @@ from app.schemas.player import PlayerCreate, PlayerUpdate, PlayerResponse, Playe
 
 
 
-# Validation unicité email / licence
-# garder email puisque c facultatif
-def validate_unique_fields(db: Session, email: str, licence: str, player_id: int = None):
-    query = db.query(User).filter(User.email == email)
-    if player_id:
-        query = query.filter(Player.id != player_id)
-    if query.first():
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email déjà utilisé")
+# Validation unicité licence
+def validate_unique_fields(db: Session, licence: str, player_id: int = None):
 
     query = db.query(Player).filter(Player.license_number == licence)
     if player_id:
@@ -22,8 +16,9 @@ def validate_unique_fields(db: Session, email: str, licence: str, player_id: int
 
 # Création d'un joueur seulement sans email
 
-def create_player_service(payload: PlayerCreate, db: Session)->Player:
-    validate_unique_fields(db, email=payload.email, licence=payload.license_number)
+def create_player_service(payload: PlayerCreate, db: Session)->PlayerCreateResponse:
+
+    validate_unique_fields(db, licence=payload.license_number)
     new_player = Player(
         first_name=payload.first_name,
         last_name=payload.last_name,
@@ -31,8 +26,6 @@ def create_player_service(payload: PlayerCreate, db: Session)->Player:
         license_number= payload.license_number,
         birth_date = payload.birth_date,
         photo_url=payload.photo_url
-        #email=payload.email,
-        #has_account=True
     )
     db.add(new_player)
     db.commit()
@@ -44,27 +37,27 @@ def create_player_service(payload: PlayerCreate, db: Session)->Player:
             last_name=new_player.last_name,
             company=new_player.company,
             license_number= new_player.license_number,
-            birth_date=new_player.birth_date,  # sera toujours None → null
+            birth_date=new_player.birth_date, 
             photo_url=new_player.photo_url,
-            email=None,  # Pas de compte = pas d'email
+            #email=None,  # Pas de compte = pas d'email
             has_account=False
         ),
-        message="Joueur créé avec succès. Vous pouvez maintenant lui créer un compte utilisateur."
+        message="Joueur créé avec succès"
     )
     
 
-# MAJ d'un joueur
 def update_player_service(player_id: int, payload: PlayerUpdate, db: Session) -> Player:
     player = db.query(Player).filter(Player.id == player_id).first()
     if not player:
         raise HTTPException(status_code=404, detail="Player n'existe pas")
 
-    # On ne touche pas email / license_number / user_id
-    player.first_name = payload.first_name
-    player.last_name = payload.last_name
-    player.company = payload.company
-    player.birth_date = payload.birth_date
-    player.photo_url = payload.photo_url if payload.photo_url is not None else player.photo_url
+    data = payload.model_dump(exclude_unset=True)
+
+    FORBIDDEN_FIELDS = {"license_number", "id"}  
+
+    for field, value in data.items():
+        if field not in FORBIDDEN_FIELDS:  
+            setattr(player, field, value)
 
     db.commit()
     db.refresh(player)
