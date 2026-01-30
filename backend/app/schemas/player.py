@@ -25,6 +25,10 @@ class PlayerCreate(BaseModel):
     def check_birth_date(cls, v): 
         if v > date.today():
             raise ValueError("La date de naissance ne peut pas être dans le futur")
+        #Age min(16ans)
+        limit_date = date.today().replace(year=date.today().year - 16)
+        if v > limit_date:
+            raise ValueError("Le joueur doit avoir au moins 16 ans")
         return v
 
 class PlayerUpdate(BaseModel):
