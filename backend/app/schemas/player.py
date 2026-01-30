@@ -1,5 +1,6 @@
 from datetime import date
-from pydantic import BaseModel, validator, Field, field_validator
+from pydantic import BaseModel, Field, field_validator
+from typing import Optional
 import re
 
 class PlayerCreate(BaseModel):
@@ -9,7 +10,7 @@ class PlayerCreate(BaseModel):
     company: str = Field(..., min_length=2, max_length = 100)
     license_number: str = Field(...)  
     birth_date: date 
-    photo_url: str | None = None
+    photo_url: Optional[str] = None
 
     @field_validator('first_name', 'last_name')
     @classmethod
@@ -39,7 +40,7 @@ class PlayerUpdate(BaseModel):
     last_name: str | None = Field(None, min_length=2, max_length=50)
     company: str | None = Field(None, min_length=2, max_length=100)
     birth_date: date | None = None
-    photo_url: str | None = None
+    photo_url: Optional[str] = None
 
     @field_validator('first_name', 'last_name')
     @classmethod
@@ -66,7 +67,7 @@ class PlayerResponse(BaseModel):
     company: str
     license_number: str 
     birth_date: date   
-    photo_url: str | None = None
+    photo_url: Optional[str] = None
     #email: str | None
     has_account: bool
     model_config = {'from_attributes': True}

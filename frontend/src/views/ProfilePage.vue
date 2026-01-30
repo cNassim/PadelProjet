@@ -25,12 +25,6 @@
             
             <div class="mb-4">
               <div class="w-48 h-48 mx-auto overflow-hidden bg-gray-100 border-4 border-gray-200 rounded-full">
-                <!--<img 
-                  v-if="profile.player.photo_url" 
-                  :src="`http://localhost:8000${profile.player.photo_url}`" 
-                  alt="Photo de profil"
-                  class="object-cover w-full h-full"
-                />-->
                 <img 
                   v-if="profile.player.photo_url" 
                   :src="profile.player.photo_url" 

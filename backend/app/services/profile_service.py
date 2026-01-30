@@ -35,6 +35,9 @@ class ProfileService:
                 player.last_name = sanitize_input(data.last_name)
             if data.birth_date is not None: 
                 player.birth_date = data.birth_date
+            # On enregistre la chaîne Base64 telle quelle
+            if hasattr(data, 'photo_url') and data.photo_url is not None:
+                player.photo_url = data.photo_url
 
         db.commit()
         db.refresh(user)
@@ -59,58 +62,6 @@ class ProfileService:
         user.must_change_password = False
         db.commit()
 
-    '''@staticmethod
-    async def handle_photo_upload(db: Session, user: User, file):
-        """Gère l'upload et remplace l'ancienne photo si elle existe"""
-        player = db.query(Player).filter(Player.user_id == user.id).first()
-        if not player:
-            raise HTTPException(status_code=403, detail="Fonctionnalité réservée aux joueurs")
-        
-        if player.photo_url:
-            delete_upload_file(player.photo_url)
-            
-        photo_url = await save_upload_file(file)
-        player.photo_url = photo_url
-        db.commit()
-        return photo_url
-
-    @staticmethod
-    def handle_photo_delete(db: Session, user: User):
-        """Supprime proprement la photo du disque et de la base"""
-        player = db.query(Player).filter(Player.user_id == user.id).first()
-        if not player or not player.photo_url:
-            raise HTTPException(status_code=404, detail="Aucune photo à supprimer")
-        
-        delete_upload_file(player.photo_url)
-        player.photo_url = None
-        db.commit()'''
-    '''@staticmethod
-    async def handle_photo_upload(db: Session, user: User, photo_data: str):
-        """Reçoit la chaîne Base64 et la stocke en base de données"""
-        player = db.query(Player).filter(Player.user_id == user.id).first()
-        
-        if not player:
-            raise HTTPException(status_code=403, detail="Fonctionnalité réservée aux joueurs")
-        
-        # Avec le Base64, on remplace simplement l'ancienne chaîne par la nouvelle
-        player.photo_url = photo_data
-        db.commit()
-        db.refresh(player)
-        
-        return player.photo_url
-
-    @staticmethod
-    def handle_photo_delete(db: Session, user: User):
-        """Supprime la chaîne Base64 de la base de données"""
-        player = db.query(Player).filter(Player.user_id == user.id).first()
-        
-        if not player or not player.photo_url:
-            raise HTTPException(status_code=404, detail="Aucune photo à supprimer")
-        
-        # On remet le champ à None
-        player.photo_url = None
-        db.commit()
-        return {"message": "Photo supprimée avec succès"}'''
     @staticmethod
     async def handle_photo_upload(db: Session, user: User, photo_data: str):
         player = db.query(Player).filter(Player.user_id == user.id).first()
