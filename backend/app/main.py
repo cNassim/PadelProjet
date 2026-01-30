@@ -58,9 +58,9 @@ app.include_router(teams.router, prefix="/api/v1/teams", tags=["Teams"])
 app.include_router(results.router, prefix="/api/v1/results", tags=["Results"])
 
 # Servir les fichiers statiques (photos de profil)
-uploads_path = Path("uploads")
+'''uploads_path = Path("uploads")
 if uploads_path.exists():
-    app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+    app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")'''
 
 @app.get("/")
 def read_root():

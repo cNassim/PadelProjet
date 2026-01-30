@@ -165,6 +165,10 @@ class ChangePasswordResponse(BaseModel):
 # Schémas pour photo de profil
 # ============================================
 
+class PhotoUpdatePayload(BaseModel):
+    """Schéma pour recevoir la photo du frontend"""
+    photo_url: str  
+
 class PhotoUploadResponse(BaseModel):
     """Réponse après upload de photo"""
     message: str

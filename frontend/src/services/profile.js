@@ -49,7 +49,7 @@ export default {
    * @param {File} file - Fichier image
    * @returns {Promise} URL de la photo
    */
-  async uploadPhoto(file) {
+  /*async uploadPhoto(file) {
     const formData = new FormData()
     formData.append('file', file)
     
@@ -59,6 +59,12 @@ export default {
       }
     })
     return response.data
+  }*/
+  async uploadPhoto(payload) {
+    // payload doit être { photo_url: "data:image..." }
+    // Axios détecte automatiquement qu'il s'agit de JSON, pas besoin de headers spécifiques
+    const response = await api.post('/profile/me/photo', payload);
+    return response.data;
   },
 
   /**
